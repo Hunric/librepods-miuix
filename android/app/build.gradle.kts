@@ -48,7 +48,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "me.kavishdevar.librepods"
+        applicationId = "io.github.hunric.librepods"
         targetSdk = 37
         versionCode = appVersionCode
         versionName = appVersionName

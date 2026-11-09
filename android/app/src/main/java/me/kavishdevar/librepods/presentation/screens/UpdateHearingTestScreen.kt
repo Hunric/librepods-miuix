@@ -55,7 +55,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -161,7 +160,7 @@ fun UpdateHearingTestScreen(
                                 if (text.isBlank() || parsed != null) setHearingValue(left, index, parsed, token, generation)
                             },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            textStyle = TextStyle(fontFamily = FontFamily(Font(R.font.sf_pro)), fontSize = 14.sp),
+                            textStyle = TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp),
                             modifier = Modifier.fillMaxWidth()
                         )
                         if (ownedValue == null && drafts[index].isBlank()) {

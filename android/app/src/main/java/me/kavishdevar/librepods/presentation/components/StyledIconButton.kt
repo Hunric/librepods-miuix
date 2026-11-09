@@ -69,7 +69,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -138,7 +137,7 @@ fun StyledIconButton(
                     text = icon,
                     color = foreground,
                     style = MiuixTheme.textStyles.headline2,
-                    fontFamily = FontFamily(Font(R.font.sf_pro)),
+                    fontFamily = FontFamily.Default,
                 )
             }
         }
@@ -382,7 +381,7 @@ half4 main(float2 coord) {
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Normal,
                         color = if (iconTint.isSpecified) iconTint else if (darkMode) Color.White else Color.Black,
-                        fontFamily = FontFamily(Font(R.font.sf_pro))
+                        fontFamily = FontFamily.Default
                     )
                 )
             }

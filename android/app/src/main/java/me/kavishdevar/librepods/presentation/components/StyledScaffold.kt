@@ -63,7 +63,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -242,7 +241,7 @@ fun StyledScaffold(
                                             fontSize = 20.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = if (isDarkTheme) Color.White else Color.Black,
-                                            fontFamily = FontFamily(Font(R.font.sf_pro))
+                                            fontFamily = FontFamily.Default
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center

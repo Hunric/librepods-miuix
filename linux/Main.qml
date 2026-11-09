@@ -55,11 +55,6 @@ ApplicationWindow {
         initialItem: mainPage
     }
 
-    FontLoader {
-        id: iconFont
-        source: "qrc:/icons/assets/fonts/SF-Symbols-6.ttf"
-    }
-
     Component {
         id: mainPage
         Item {
@@ -177,9 +172,8 @@ ApplicationWindow {
                 anchors.top: parent.top
                 anchors.right: parent.right
                 anchors.margins: 10
-                font.family: iconFont.name
                 font.pixelSize: 18
-                text: "\uf958"
+                text: "\u2699"
                 onClicked: stackView.push(settingsPage)
             }
         }
@@ -319,9 +313,8 @@ ApplicationWindow {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: 10
-                font.family: iconFont.name
                 font.pixelSize: 18
-                text: "\uecb1" // U+ECB1
+                text: "\u2039"  // U+2039 SINGLE LEFT-POINTING ANGLE QUOTATION MARK
                 onClicked: stackView.pop()
             }
         }

@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -112,7 +111,7 @@ fun StyledInputField(
                     textStyle = TextStyle(
                         fontSize = 16.sp,
                         color = textColor,
-                        fontFamily = FontFamily(Font(R.font.sf_pro))
+                        fontFamily = FontFamily.Default
                     ),
                     cursorBrush = SolidColor(textColor),
                     decorator = { innerTextField ->
@@ -134,7 +133,7 @@ fun StyledInputField(
                                         style = TextStyle(
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Light,
-                                            fontFamily = FontFamily(Font(R.font.sf_pro)),
+                                            fontFamily = FontFamily.Default,
                                             color = textColor.copy(alpha = 0.8f)
                                         ),
                                         modifier = Modifier
@@ -154,7 +153,7 @@ fun StyledInputField(
                                         text = "􀁡",
                                         style = TextStyle(
                                             fontSize = 16.sp,
-                                            fontFamily = FontFamily(Font(R.font.sf_pro)),
+                                            fontFamily = FontFamily.Default,
                                             color = if (isDarkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(
                                                 alpha = 0.6f
                                             )

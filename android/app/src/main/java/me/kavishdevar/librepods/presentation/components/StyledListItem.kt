@@ -60,7 +60,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -246,7 +245,7 @@ private fun StyledListItemContent(
                                 text = "􀆅",
                                 style = TextStyle(
                                     fontSize = 20.sp,
-                                    fontFamily = FontFamily(Font(R.font.sf_pro)),
+                                    fontFamily = FontFamily.Default,
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = floatAnimateState),
                                 ),
                                 modifier = Modifier.padding(end = 4.dp)

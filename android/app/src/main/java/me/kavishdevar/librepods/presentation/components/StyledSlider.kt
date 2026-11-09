@@ -72,7 +72,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -267,10 +266,10 @@ fun StyledSlider(
                 summary = description,
                 valueText = displayedValue.takeIf { showValue },
                 startAction = startIcon?.let {
-                    { MiuixText(text = it, fontFamily = FontFamily(Font(R.font.sf_pro))) }
+                    { MiuixText(text = it, fontFamily = FontFamily.Default) }
                 },
                 endActions = endIcon?.let {
-                    { MiuixText(text = it, fontFamily = FontFamily(Font(R.font.sf_pro))) }
+                    { MiuixText(text = it, fontFamily = FontFamily.Default) }
                 },
                 bottomAction = if (startLabel != null || endLabel != null) {
                     {
@@ -352,7 +351,7 @@ fun StyledSlider(
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Normal,
                                             color = labelTextColor,
-                                            fontFamily = FontFamily(Font(R.font.sf_pro))
+                                            fontFamily = FontFamily.Default
                                         )
                                     )
                                     Text(
@@ -361,7 +360,7 @@ fun StyledSlider(
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Normal,
                                             color = labelTextColor,
-                                            fontFamily = FontFamily(Font(R.font.sf_pro))
+                                            fontFamily = FontFamily.Default
                                         )
                                     )
                                 }
@@ -388,7 +387,7 @@ fun StyledSlider(
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Normal,
                                                 color = accentColor,
-                                                fontFamily = FontFamily(Font(R.font.sf_pro))
+                                                fontFamily = FontFamily.Default
                                             ),
                                             modifier = Modifier
                                                 .padding(horizontal = 12.dp)
@@ -440,7 +439,7 @@ fun StyledSlider(
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Normal,
                                                 color = accentColor,
-                                                fontFamily = FontFamily(Font(R.font.sf_pro))
+                                                fontFamily = FontFamily.Default
                                             ),
                                             modifier = Modifier
                                                 .padding(horizontal = 12.dp)
@@ -638,7 +637,7 @@ fun StyledSlider(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = labelTextColor.copy(alpha = 0.6f),
-                                fontFamily = FontFamily(Font(R.font.sf_pro))
+                                fontFamily = FontFamily.Default
                             ),
                             modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)
                         )
@@ -664,7 +663,7 @@ fun StyledSlider(
                                 color = (if (isSystemInDarkTheme()) Color.White else Color.Black).copy(
                                     alpha = 0.6f
                                 ),
-                                fontFamily = FontFamily(Font(R.font.sf_pro))
+                                fontFamily = FontFamily.Default
                             ),
                             modifier = Modifier
                                 .padding(horizontal = 18.dp, vertical = 4.dp)

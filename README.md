@@ -1,3 +1,9 @@
+> **Fork notice**: This is a personal fork of [LibrePods](https://github.com/librepods-org/librepods),
+> modified by Hunric starting 2026-11. Not affiliated with or endorsed by the LibrePods project.
+>
+> Changes: Miuix UI redesign, device-authoritative settings sync, startup recovery,
+> overlay animation tuning, FOSS release signing.
+
 > [!WARNING]
 > librepods.org is not an official website of the LibrePods project. It inaccurately claims to be the official website of the project by claiming copyrights and using the LibrePods logo in the footer. And at the same time, they say that the project is not affiliated with the LibrePods project or its developers.
 > 
@@ -265,12 +271,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+Modifications Copyright (C) 2026 Hunric
+Source: https://github.com/Hunric/librepods-miuix
+
 # Trademark Notice
 
 The GPL does not grant any rights to use the LibrePods name, logo, or branding. The LibrePods name and logo may not be used for software, websites, domains, products, services, or other projects in a manner that suggests affiliation with, endorsement by, or association with the official LibrePods project without prior permission.
 
 If you see any misuse of the LibrePods name or logo, please report it to [me@kavish.xyz](mailto:me@kavish.xyz).
 
-The SF Pro font used in the Android app is the property of Apple Inc.. This will be removed in future versions of the app and replaced with an open alternative soon.
+The SF Pro and SF Symbols fonts used by the upstream project are the property of Apple Inc.. This fork removes both and falls back to the platform default font.
 
 AirPods, AirPods Pro, AirPods Max, and the AirPods logo are trademarks of Apple Inc. The LibrePods project is not affiliated with or endorsed by Apple Inc. in any way.
