@@ -25,6 +25,7 @@ import me.kavishdevar.librepods.data.Capability
 import me.kavishdevar.librepods.data.CustomEq
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
@@ -61,6 +62,8 @@ class AACPManager {
         }
 
         private val HEADER_BYTES = byteArrayOf(0x04, 0x00, 0x04, 0x00)
+        private val HANDSHAKE_ACK_PREFIX = byteArrayOf(0x01, 0x00, 0x04, 0x00)
+        private val FEATURE_FLAGS_ACK_PREFIX = byteArrayOf(0x04, 0x00, 0x04, 0x00, 0x2B, 0x00)
 
         data class ControlCommandStatus(
             val identifier: ControlCommandIdentifiers, val value: ByteArray
@@ -214,17 +217,15 @@ class AACPManager {
     private fun setControlCommandStatusValue(
         identifier: ControlCommandIdentifiers, value: ByteArray
     ) {
-        val existingStatus = getControlCommandStatus(identifier)
-        if (existingStatus?.value.contentEquals(value)) {
-            controlCommandStatusList.remove(existingStatus)
-        }
-        controlCommandListeners[identifier]?.forEach { listener ->
-            listener.onControlCommandReceived(ControlCommand(identifier.value, value))
-        }
+        controlCommandStatusList.removeAll { it.identifier == identifier }
         controlCommandStatusList.add(ControlCommandStatus(identifier, value))
 
         if (identifier == ControlCommandIdentifiers.OWNS_CONNECTION) {
             owns = value.isNotEmpty() && value[0] == 0x01.toByte()
+        }
+
+        controlCommandListeners[identifier]?.forEach { listener ->
+            listener.onControlCommandReceived(ControlCommand(identifier.value, value))
         }
     }
 
@@ -246,6 +247,11 @@ class AACPManager {
         fun onHeadphoneAccommodationReceived(eqData: FloatArray)
         fun onCustomEqReceived(customEq: CustomEq)
         fun onCapabilitiesReceived(capabilities: List<Capability>)
+        fun onHandshakeAcknowledged() = Unit
+        fun onFeatureFlagsAcknowledged() = Unit
+        /** Actual inbound control data only; outgoing optimistic cache updates never invoke this. */
+        fun onReceivedControlValue(identifier: ControlCommandIdentifiers, value: ByteArray) = Unit
+        fun onReceivedCustomEqValue(customEq: CustomEq) = Unit
     }
 
     fun parseStemPressResponse(data: ByteArray): Pair<StemPressType, StemPressBudType> {
@@ -280,6 +286,8 @@ class AACPManager {
     }
 
     private var callback: PacketCallback? = null
+    private val handshakeAcknowledgementHandled = AtomicBoolean(false)
+    private val featureFlagsAcknowledgementHandled = AtomicBoolean(false)
 
     fun setPacketCallback(callback: PacketCallback) {
         this.callback = callback
@@ -308,18 +316,12 @@ class AACPManager {
 
     fun sendControlCommand(identifier: Byte, value: ByteArray): Boolean {
         val controlPacket = createControlCommandPacket(identifier, value)
-        setControlCommandStatusValue(
-            ControlCommandIdentifiers.fromByte(identifier) ?: return false, value
-        )
         return sendDataPacket(controlPacket)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
     fun sendControlCommand(identifier: Byte, value: Byte): Boolean {
         val controlPacket = createControlCommandPacket(identifier, byteArrayOf(value))
-        setControlCommandStatusValue(
-            ControlCommandIdentifiers.fromByte(identifier) ?: return false, byteArrayOf(value)
-        )
         return sendDataPacket(controlPacket)
     }
 
@@ -327,19 +329,11 @@ class AACPManager {
         val controlPacket = createControlCommandPacket(
             identifier, if (value) byteArrayOf(0x01) else byteArrayOf(0x02)
         )
-        setControlCommandStatusValue(
-            ControlCommandIdentifiers.fromByte(identifier) ?: return false,
-            if (value) byteArrayOf(0x01) else byteArrayOf(0x02)
-        )
         return sendDataPacket(controlPacket)
     }
 
     fun sendControlCommand(identifier: Byte, value: Int): Boolean {
         val controlPacket = createControlCommandPacket(identifier, byteArrayOf(value.toByte()))
-        setControlCommandStatusValue(
-            ControlCommandIdentifiers.fromByte(identifier) ?: return false,
-            byteArrayOf(value.toByte())
-        )
         return sendDataPacket(controlPacket)
     }
 
@@ -399,6 +393,20 @@ class AACPManager {
 
     @OptIn(ExperimentalStdlibApi::class)
     fun receivePacket(packet: ByteArray) {
+        if (hasPacketPrefix(packet, HANDSHAKE_ACK_PREFIX)) {
+            val status = handshakeStatus(packet)
+            if (status == null) {
+                Log.w(TAG, "Ignoring short handshake acknowledgment")
+            } else if (status == 0) {
+                if (handshakeAcknowledgementHandled.compareAndSet(false, true)) {
+                    callback?.onHandshakeAcknowledged()
+                }
+            } else {
+                Log.w(TAG, "Ignoring non-success handshake acknowledgment status=0x${status.toString(16)}")
+            }
+            return
+        }
+
         if (!packet.toHexString().startsWith("04000400")) {
             Log.w(
                 TAG, "Received packet does not start with expected header: ${
@@ -406,6 +414,12 @@ class AACPManager {
                     "%02X".format(it)
                 }
             }")
+            return
+        }
+        if (hasPacketPrefix(packet, FEATURE_FLAGS_ACK_PREFIX)) {
+            if (featureFlagsAcknowledgementHandled.compareAndSet(false, true)) {
+                callback?.onFeatureFlagsAcknowledged()
+            }
             return
         }
         if (packet.size < 6) {
@@ -428,45 +442,11 @@ class AACPManager {
                     callback?.onUnknownPacketReceived(packet)
                     return
                 }
-                setControlCommandStatusValue(
-                    ControlCommandIdentifiers.fromByte(controlCommand.identifier) ?: return,
-                    controlCommand.value
-                )
-                Log.d(
-                    TAG,
-                    "Control command received: ${controlCommand.identifier.toHexString()} - ${
-                        controlCommand.value.joinToString(" ") { "%02X".format(it) }
-                    }")
-
-                val controlCommandListText = try {
-                    controlCommandStatusList.joinToString(", ") { it ->
-                        "${it.identifier.name} (${it.identifier.value.toHexString()}) - ${
-                            it.value.joinToString(
-                                " "
-                            ) { "%02X".format(it) }
-                        }"
-                    }
-                } catch (e: Exception) {
-                    e.message
-                }
-
-                Log.d(
-                    TAG, "Control command list is now: $controlCommandListText"
-                )
-
                 val controlCommandIdentifier =
-                    ControlCommandIdentifiers.fromByte(controlCommand.identifier)
-                if (controlCommandIdentifier != null) {
-                    controlCommandListeners[controlCommandIdentifier]?.forEach { listener ->
-                        Log.d(TAG, "calling listener for ${controlCommandIdentifier.name}")
-                        listener.onControlCommandReceived(controlCommand)
-                    }
-                } else {
-                    Log.w(
-                        TAG,
-                        "Unknown control command identifier: ${controlCommand.identifier.toHexString()}"
-                    )
-                }
+                    ControlCommandIdentifiers.fromByte(controlCommand.identifier) ?: return
+                callback?.onReceivedControlValue(controlCommandIdentifier, controlCommand.value.copyOf())
+                setControlCommandStatusValue(controlCommandIdentifier, controlCommand.value)
+                Log.d(TAG, "Control state received")
 
                 if (controlCommandIdentifier == ControlCommandIdentifiers.OWNS_CONNECTION) {
                     callback?.onOwnershipChangeReceived(owns)
@@ -480,6 +460,10 @@ class AACPManager {
             }
 
             Opcodes.CONVERSATION_AWARENESS -> {
+                if (packet.size < 10) {
+                    Log.w(TAG, "Ignoring short conversation awareness packet")
+                    return
+                }
                 callback?.onConversationAwarenessReceived(packet)
             }
 
@@ -602,8 +586,9 @@ class AACPManager {
             }
 
             Opcodes.CUSTOM_EQ -> {
-                Log.d(TAG, "Parsing CUSTOM_EQ: ${packet.toHexString()}")
-                customEq = parseCustomEqPacket(packet)
+                val receivedEq = parseCustomEqPacket(packet) ?: return
+                callback?.onReceivedCustomEqValue(receivedEq)
+                customEq = receivedEq
                 customEqCallback?.invoke(customEq)
                 callback?.onCustomEqReceived(customEq)
             }
@@ -614,6 +599,17 @@ class AACPManager {
             }
         }
     }
+
+    private fun hasPacketPrefix(packet: ByteArray, prefix: ByteArray): Boolean =
+        packet.size >= prefix.size && prefix.indices.all { packet[it] == prefix[it] }
+
+    internal fun handshakeStatus(packet: ByteArray): Int? {
+        if (packet.size < 6 || !hasPacketPrefix(packet, HANDSHAKE_ACK_PREFIX)) return null
+        return (packet[4].toInt() and 0xFF) or ((packet[5].toInt() and 0xFF) shl 8)
+    }
+
+    internal fun isValidAacpResponse(packet: ByteArray): Boolean =
+        packet.size >= 6 && hasPacketPrefix(packet, HEADER_BYTES)
 
     fun sendNotificationRequest(): Boolean {
         return sendDataPacket(createRequestNotificationPacket())
@@ -1139,7 +1135,9 @@ class AACPManager {
     @OptIn(ExperimentalStdlibApi::class)
     fun sendPacket(packet: ByteArray): Boolean {
         try {
-            Log.d(TAG, "Sending packet: ${packet.joinToString(" ") { "%02X".format(it) }}")
+            if (packet.getOrNull(4) != Opcodes.CONTROL_COMMAND && packet.getOrNull(4) != Opcodes.CUSTOM_EQ) {
+                Log.d(TAG, "Sending packet: ${packet.joinToString(" ") { "%02X".format(it) }}")
+            }
 
             if (packet[4] == Opcodes.CONTROL_COMMAND) {
                 val controlCommand = try {
@@ -1149,10 +1147,7 @@ class AACPManager {
                     callback?.onUnknownPacketReceived(packet)
                     return false
                 }
-                Log.d(
-                    TAG, "Control command: ${controlCommand.identifier.toHexString()} - ${
-                    controlCommand.value.joinToString(" ") { "%02X".format(it) }
-                }")
+                Log.d(TAG, "Sending control state")
                 setControlCommandStatusValue(
                     ControlCommandIdentifiers.fromByte(controlCommand.identifier) ?: return false,
                     controlCommand.value
@@ -1162,8 +1157,9 @@ class AACPManager {
             val socket = BluetoothConnectionManager.aacpSocket ?: return false
 
             if (socket.isConnected) {
-                socket.outputStream?.write(packet)
-                socket.outputStream?.flush()
+                val output = socket.outputStream ?: return false
+                output.write(packet)
+                output.flush()
                 return true
             } else {
                 Log.d(TAG, "Can't send packet: Socket not initialized or connected")
@@ -1271,12 +1267,17 @@ class AACPManager {
 
     fun disconnected() {
         Log.d(TAG, "Disconnected, clearing state")
+        resetStartupAcknowledgements()
         controlCommandStatusList.clear()
-        controlCommandListeners.clear()
         owns = false
         oldConnectedDevices = listOf()
         connectedDevices = listOf()
         audioSource = null
+    }
+
+    internal fun resetStartupAcknowledgements() {
+        handshakeAcknowledgementHandled.set(false)
+        featureFlagsAcknowledgementHandled.set(false)
     }
 
     fun parseInformationPacket(packet: ByteArray): AirPodsInformation {
@@ -1318,33 +1319,15 @@ class AACPManager {
         return sendDataPacket(customEq.toPacket())
     }
 
-    fun parseCustomEqPacket(packet: ByteArray): CustomEq {
-        val data = packet.sliceArray(6 until packet.size)
-
-        if (data.size < 7) {
-            Log.e(TAG, "custom EQ packet length less than 7, returning default")
-            return CustomEq(1, 50, 50, 50)
-        }
-
-        val lengthLow = data[0].toInt() and 0xFF
-        val lengthHigh = data[1].toInt() and 0xFF
-
-        val length = (lengthHigh shl 8) or lengthLow
-
-        if (length != 5) {
-            Log.w(TAG, "parseCustomEqPacket: unexpected length ($length). parsing normally")
-        }
-
-        val state = data[3].toInt()
-        val low = data[4].toInt()
-        val mid = data[5].toInt()
-        val high = data[6].toInt()
-
-        return CustomEq(
-            state,
-            low,
-            mid,
-            high
-        )
+    fun parseCustomEqPacket(packet: ByteArray): CustomEq? {
+        if (packet.size != 13 || !hasPacketPrefix(packet, HEADER_BYTES) ||
+            packet[4] != Opcodes.CUSTOM_EQ || packet[5] != 0.toByte() ||
+            packet[6] != 5.toByte() || packet[7] != 0.toByte() || packet[8] != 1.toByte()) return null
+        val state = packet[9].toInt() and 0xFF
+        val low = packet[10].toInt() and 0xFF
+        val mid = packet[11].toInt() and 0xFF
+        val high = packet[12].toInt() and 0xFF
+        if (state !in 1..2 || low !in 0..100 || mid !in 0..100 || high !in 0..100) return null
+        return CustomEq(state, low, mid, high)
     }
 }

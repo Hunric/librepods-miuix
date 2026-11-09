@@ -76,6 +76,11 @@ import com.kyant.backdrop.shadow.Shadow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import me.kavishdevar.librepods.presentation.theme.DesignSystem
+import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
+import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.Switch as MiuixSwitch
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun StyledSwitch(
@@ -83,6 +88,13 @@ fun StyledSwitch(
     onCheckedChange: (Boolean) -> Unit,
     enabled: Boolean = true,
 ) {
+    if (LocalDesignSystem.current == DesignSystem.Miuix) {
+        MiuixSwitch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+        )
+    } else {
     val isDarkTheme = isSystemInDarkTheme()
     val haptics = LocalHapticFeedback.current
 
@@ -285,20 +297,20 @@ fun StyledSwitch(
                 .height(thumbHeight)
         )
     }
+    }
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
 fun StyledSwitchPreview() {
-    val isDarkTheme = isSystemInDarkTheme()
-    val backgroundColor = if (isDarkTheme) Color(0xFF1C1C1E) else Color(0xFFF2F2F7)
-    Box(
-        modifier = Modifier
-            .background(backgroundColor)
-            .width(100.dp)
-            .height(150.dp),
-        contentAlignment = Alignment.Center
-    ) {
+    LibrePodsTheme() {
+        Box(
+            modifier = Modifier
+                .background(MiuixTheme.colorScheme.background)
+                .width(100.dp)
+                .height(150.dp),
+            contentAlignment = Alignment.Center
+        ) {
         val checked = remember { mutableStateOf(true) }
         StyledSwitch(
             checked = checked.value,
@@ -313,5 +325,6 @@ fun StyledSwitchPreview() {
 //            delay(1000)
 //            checked.value = true
 //        }
+        }
     }
 }

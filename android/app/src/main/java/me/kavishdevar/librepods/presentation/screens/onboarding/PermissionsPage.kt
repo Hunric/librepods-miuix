@@ -15,20 +15,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +45,9 @@ import me.kavishdevar.librepods.presentation.MaterialIcons
 import me.kavishdevar.librepods.presentation.components.ListItemOrientation
 import me.kavishdevar.librepods.presentation.components.StyledList
 import me.kavishdevar.librepods.presentation.components.StyledListItem
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -158,8 +156,7 @@ fun PermissionsPage(
                                 .size(48.dp)
                                 .background(
                                     animatedBluetoothContainerColor,
-                                    MaterialShapes.SoftBurst.normalized()
-                                        .toShape()
+                                    CircleShape
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -201,8 +198,7 @@ fun PermissionsPage(
                                 .size(48.dp)
                                 .background(
                                     animatedNotificationsContainerColor,
-                                    MaterialShapes.SoftBurst.normalized()
-                                        .toShape()
+                                    CircleShape
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -231,8 +227,7 @@ fun PermissionsPage(
                                 .size(48.dp)
                                 .background(
                                     animatedPhoneContainerColor,
-                                    MaterialShapes.SoftBurst.normalized()
-                                        .toShape()
+                                    CircleShape
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -270,8 +265,7 @@ fun PermissionsPage(
                             .size(48.dp)
                             .background(
                                 animatedOverlayContainerColor,
-                                MaterialShapes.SoftBurst.normalized()
-                                    .toShape()
+                                CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -291,17 +285,15 @@ fun PermissionsPage(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilledIconButton(
+                MiuixIconButton(
                     onClick = onBackward,
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow)),
-                    shape = IconButtonDefaults.mediumRoundShape
+                    modifier = Modifier.size(48.dp),
+                    backgroundColor = MiuixTheme.colorScheme.secondaryVariant
                 ) {
                     Icon(
                         Icons.AutoMirrored.Default.ArrowBack,
                         contentDescription = "backward",
-                        modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
                 Button(
@@ -314,7 +306,7 @@ fun PermissionsPage(
                             Settings.canDrawOverlays(context)
                     },
                     modifier = Modifier
-                        .height(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow).height)
+                        .height(48.dp)
                         .weight(1f),
                     enabled = !bluetoothPermissionsState.allPermissionsGranted || !notificationPermissionState.status.isGranted || !phonePermissionState.allPermissionsGranted || !canDrawOverlays.value
                 ) {
@@ -323,20 +315,16 @@ fun PermissionsPage(
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
-                FilledIconButton(
+                MiuixIconButton(
                     onClick = onForward,
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .size(
-                            IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow)
-                        ),
-                    shape = IconButtonDefaults.mediumRoundShape,
+                    modifier = Modifier.size(48.dp),
+                    backgroundColor = MiuixTheme.colorScheme.secondaryVariant,
                     enabled = bluetoothPermissionsState.allPermissionsGranted
                 ) {
                     Icon(
                         Icons.AutoMirrored.Default.ArrowForward,
                         contentDescription = "forward",
-                        modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }

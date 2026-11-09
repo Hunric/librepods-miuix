@@ -85,9 +85,10 @@ data class HearingAidSettings(
     }
 }
 
-fun parseHearingAidSettingsResponse(data: ByteArray): HearingAidSettings? {
-    if (data.size < 104) return null
+fun parseHearingAidSettingsResponse(data: ByteArray?): HearingAidSettings? {
+    if (data == null || data.size < 104) return null
     val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
+    if ((0 until 25).any { !buffer.getFloat(4 + it * 4).isFinite() }) return null
 
     buffer.get() // skip 0x02
     buffer.get() // skip 0x02
@@ -137,6 +138,43 @@ fun parseHearingAidSettingsResponse(data: ByteArray): HearingAidSettings? {
     )
 }
 
+internal fun encodeHearingAidSettings(
+    currentData: ByteArray,
+    hearingAidSettings: HearingAidSettings
+): ByteArray? {
+    if (currentData.size < 104) return null
+    val buffer = ByteBuffer.wrap(currentData.copyOf()).order(ByteOrder.LITTLE_ENDIAN)
+
+    // for some reason
+    buffer.put(2, 0x64)
+
+    // Left EQ
+    for (i in 0..7) {
+        buffer.putFloat(4 + i * 4, hearingAidSettings.leftEQ[i])
+    }
+
+    // Left ear adjustments
+    buffer.putFloat(36, hearingAidSettings.leftAmplification)
+    buffer.putFloat(40, hearingAidSettings.leftTone)
+    buffer.putFloat(44, if (hearingAidSettings.leftConversationBoost) 1.0f else 0.0f)
+    buffer.putFloat(48, hearingAidSettings.leftAmbientNoiseReduction)
+
+    // Right EQ
+    for (i in 0..7) {
+        buffer.putFloat(52 + i * 4, hearingAidSettings.rightEQ[i])
+    }
+
+    // Right ear adjustments
+    buffer.putFloat(84, hearingAidSettings.rightAmplification)
+    buffer.putFloat(88, hearingAidSettings.rightTone)
+    buffer.putFloat(92, if (hearingAidSettings.rightConversationBoost) 1.0f else 0.0f)
+    buffer.putFloat(96, hearingAidSettings.rightAmbientNoiseReduction)
+
+    // Own-voice data has no editable UI; retain the device's original bytes.
+
+    return buffer.array()
+}
+
 fun sendHearingAidSettings(
     currentData: ByteArray,
     hearingAidSettings: HearingAidSettings,
@@ -152,39 +190,9 @@ fun sendHearingAidSettings(
                 Log.w(TAG, "Current data size ${currentData.size} too small, cannot send settings")
                 return@launch
             }
-            val buffer = ByteBuffer.wrap(currentData).order(ByteOrder.LITTLE_ENDIAN)
-
-            // for some reason
-            buffer.put(2, 0x64)
-
-            // Left EQ
-            for (i in 0..7) {
-                buffer.putFloat(4 + i * 4, hearingAidSettings.leftEQ[i])
-            }
-
-            // Left ear adjustments
-            buffer.putFloat(36, hearingAidSettings.leftAmplification)
-            buffer.putFloat(40, hearingAidSettings.leftTone)
-            buffer.putFloat(44, if (hearingAidSettings.leftConversationBoost) 1.0f else 0.0f)
-            buffer.putFloat(48, hearingAidSettings.leftAmbientNoiseReduction)
-
-            // Right EQ
-            for (i in 0..7) {
-                buffer.putFloat(52 + i * 4, hearingAidSettings.rightEQ[i])
-            }
-
-            // Right ear adjustments
-            buffer.putFloat(84, hearingAidSettings.rightAmplification)
-            buffer.putFloat(88, hearingAidSettings.rightTone)
-            buffer.putFloat(92, if (hearingAidSettings.rightConversationBoost) 1.0f else 0.0f)
-            buffer.putFloat(96, hearingAidSettings.rightAmbientNoiseReduction)
-
-            // Own voice amplification
-            buffer.putFloat(100, hearingAidSettings.ownVoiceAmplification)
-
-            Log.d(TAG, "Sending updated settings: ${currentData.joinToString(" ") { String.format("%02X", it) }}")
-
-            sender(ATTHandles.HEARING_AID, currentData)
+            val updatedData = encodeHearingAidSettings(currentData, hearingAidSettings) ?: return@launch
+            Log.d(TAG, "Sending updated settings: ${updatedData.joinToString(" ") { String.format("%02X", it) }}")
+            sender(ATTHandles.HEARING_AID, updatedData)
         } catch (e: IOException) {
             e.printStackTrace()
         }

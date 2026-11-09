@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.TextField as MiuixTextField
 
 
 @Composable
@@ -52,22 +53,18 @@ fun StyledInputField(
     singleLine: Boolean = true,
     forceApple: Boolean = false
 ) {
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material && !forceApple
+    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Miuix
 
     if(m3eEnabled) {
-        TextField(
+        MiuixTextField(
             state = inputState,
-            placeholder = {
-                Text(
-                    text = placeholder,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-                )
-            },
+            label = placeholder,
+            useLabelAsPlaceholder = true,
             lineLimits = if (singleLine) TextFieldLineLimits.SingleLine else TextFieldLineLimits.Default,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
+                .focusRequester(focusRequester)
         )
     }
     else {

@@ -52,6 +52,16 @@ android {
         targetSdk = 37
         versionCode = appVersionCode
         versionName = appVersionName
+        buildConfigField(
+            "Boolean",
+            "SETTINGS_VERIFICATION_CONTROLS",
+            (providers.gradleProperty("settingsVerificationControls").orNull == "true").toString()
+        )
+        buildConfigField(
+            "Boolean",
+            "SHOW_SETTINGS_SYNC",
+            (providers.gradleProperty("showSettingsSync").orNull == "true").toString()
+        )
     }
     buildTypes {
         release {
@@ -76,10 +86,18 @@ android {
             if (releaseSigningAvailable) {
                 signingConfig = signingConfigs.getByName("release")
             }
-            versionNameSuffix = "-debug"
+            versionNameSuffix = "-debug-miuix"
             defaultConfig {
                 minSdk = 33
             }
+        }
+        create("performance") {
+            initWith(getByName("release"))
+            isDebuggable = false
+            isJniDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
+            versionNameSuffix = "-miuix-performance"
+            matchingFallbacks += listOf("release")
         }
     }
     productFlavors {
@@ -103,6 +121,10 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    testOptions {
+        // AACPManager JVM tests call android.util.Log but do not emulate Android behavior.
+        unitTests.isReturnDefaultValues = true
+    }
     androidResources {
         generateLocaleConfig = true
     }
@@ -125,8 +147,8 @@ android {
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
+    testImplementation("junit:junit:4.13.2")
     implementation(libs.accompanist.permissions)
-    implementation(libs.androidx.compose.ui.text.google.fonts)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -135,6 +157,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.miuix.ui)
+    implementation(libs.miuix.preference)
     implementation(libs.annotations)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.constraintlayout)

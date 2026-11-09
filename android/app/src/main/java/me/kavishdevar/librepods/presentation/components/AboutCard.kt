@@ -44,7 +44,7 @@ fun AboutCard(
             "􀀧 ${serialNumbers[2]}"
         )
 
-        DesignSystem.Material -> listOf(
+        DesignSystem.Miuix -> listOf(
             serialNumbers[0],
             stringResource(R.string.left) + " " + serialNumbers[1],
             stringResource(R.string.right) + " " + serialNumbers[2],

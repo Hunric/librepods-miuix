@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -24,6 +26,11 @@ import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
 import me.kavishdevar.librepods.presentation.theme.sectionHeader
+import top.yukonga.miuix.kmp.basic.Card as MiuixCard
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+internal val LocalIsInStyledListCard = compositionLocalOf { false }
 
 @Composable
 fun StyledList(
@@ -35,7 +42,39 @@ fun StyledList(
     val scope = StyledListScope()
     scope.content()
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
+    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Miuix
+
+    if (m3eEnabled) {
+        Column(modifier = modifier.fillMaxWidth()) {
+            title?.let {
+                MiuixText(
+                    text = it,
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                )
+            }
+            CompositionLocalProvider(LocalIsInStyledListCard provides true) {
+                MiuixCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                ) {
+                    scope.items.forEachIndexed { index, item ->
+                        item(index, scope.items.size)
+                    }
+                }
+            }
+            description?.let {
+                MiuixText(
+                    text = it,
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        }
+        return
+    }
 
     Column (modifier = modifier) {
         title?.let {
@@ -98,10 +137,8 @@ class StyledListScope {
 @Preview(showBackground = true, wallpaper = GREEN_DOMINATED_EXAMPLE, uiMode = UI_MODE_NIGHT_YES)
 @Composable
 fun StyledListDemo() {
-    LibrePodsTheme(
-        m3eEnabled = true
-    ) {
-        val backgroundC = MaterialTheme.colorScheme.background
+    LibrePodsTheme(darkTheme = true) {
+        val backgroundC = MiuixTheme.colorScheme.background
         StyledScaffold(
             title = "${backgroundC.red}, ${backgroundC.green}, ${backgroundC.blue}"
         ) {

@@ -32,7 +32,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,7 +44,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,17 +51,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.ButtonDefaults as MiuixButtonDefaults
+import top.yukonga.miuix.kmp.window.WindowBottomSheet
+import top.yukonga.miuix.kmp.window.WindowDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -81,7 +76,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -117,7 +111,7 @@ fun CustomIconButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun TroubleshootingScreen() {
     val context = LocalContext.current
@@ -144,16 +138,13 @@ fun TroubleshootingScreen() {
         }
     }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
 
-    val backgroundColor = if (isSystemInDarkTheme()) Color(0xFF1C1C1E) else Color(0xFFFFFFFF)
-    val textColor = if (isSystemInDarkTheme()) Color.White else Color.Black
-    val accentColor = if (isSystemInDarkTheme()) Color(0xFF007AFF) else Color(0xFF3C6DF5)
-    val buttonBgColor = if (isSystemInDarkTheme()) Color(0xFF333333) else Color(0xFFDDDDDD)
+    val backgroundColor = MaterialTheme.colorScheme.surface
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val buttonBgColor = MaterialTheme.colorScheme.secondaryContainer
 
     var instructionText by remember { mutableStateOf("") }
-    val isDarkTheme = isSystemInDarkTheme()
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -215,7 +206,7 @@ fun TroubleshootingScreen() {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        val topPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
+        val topPadding = 0.dp
         val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
 
         Column(
@@ -234,7 +225,6 @@ fun TroubleshootingScreen() {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = textColor.copy(alpha = 0.6f),
-                    fontFamily = FontFamily(Font(R.font.sf_pro))
                 ),
                 modifier = Modifier.padding(16.dp, bottom = 4.dp, top = 8.dp)
             )
@@ -283,10 +273,11 @@ fun TroubleshootingScreen() {
                         )
 
                         if (savedLogs.size > 1) {
-                            TextButton(
+                            Button(
                                 onClick = { showDeleteAllDialog = true },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
+                                colors = MiuixButtonDefaults.buttonColors(
+                                    color = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
                                 )
                             ) {
                                 Text("Delete All")
@@ -348,9 +339,9 @@ fun TroubleshootingScreen() {
                 Button(
                     onClick = { showTroubleshootingSteps = true },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = buttonBgColor,
+                    cornerRadius = 10.dp,
+                    colors = MiuixButtonDefaults.buttonColors(
+                        color = buttonBgColor,
                         contentColor = textColor
                     ),
                     enabled = !isCollectingLogs
@@ -375,7 +366,6 @@ fun TroubleshootingScreen() {
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Light,
                             color = textColor.copy(alpha = 0.6f),
-                            fontFamily = FontFamily(Font(R.font.sf_pro))
                         ),
                         modifier = Modifier.padding(16.dp, bottom = 2.dp, top = 8.dp)
                     )
@@ -417,9 +407,9 @@ fun TroubleshootingScreen() {
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = buttonBgColor,
+                                    cornerRadius = 10.dp,
+                                    colors = MiuixButtonDefaults.buttonColors(
+                                        color = buttonBgColor,
                                         contentColor = textColor
                                     )
                                 ) {
@@ -499,9 +489,9 @@ fun TroubleshootingScreen() {
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = buttonBgColor,
+                                    cornerRadius = 10.dp,
+                                    colors = MiuixButtonDefaults.buttonColors(
+                                        color = buttonBgColor,
                                         contentColor = textColor
                                     )
                                 ) {
@@ -514,9 +504,7 @@ fun TroubleshootingScreen() {
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    CircularProgressIndicator(
-                                        color = accentColor
-                                    )
+                                    CircularProgressIndicator()
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -551,9 +539,9 @@ fun TroubleshootingScreen() {
                                                     }
                                                 }
                                             },
-                                            shape = RoundedCornerShape(10.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = buttonBgColor,
+                                            cornerRadius = 10.dp,
+                                            colors = MiuixButtonDefaults.buttonColors(
+                                                color = buttonBgColor,
                                                 contentColor = textColor
                                             ),
                                             modifier = Modifier
@@ -595,9 +583,9 @@ fun TroubleshootingScreen() {
                                                 )
                                             }
                                         },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = buttonBgColor,
+                                        cornerRadius = 10.dp,
+                                        colors = MiuixButtonDefaults.buttonColors(
+                                            color = buttonBgColor,
                                             contentColor = textColor
                                         ),
                                         modifier = Modifier.width(150.dp)
@@ -620,9 +608,9 @@ fun TroubleshootingScreen() {
                                                 )
                                             }
                                         },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = buttonBgColor,
+                                        cornerRadius = 10.dp,
+                                        colors = MiuixButtonDefaults.buttonColors(
+                                            color = buttonBgColor,
                                             contentColor = textColor
                                         ),
                                         modifier = Modifier.width(150.dp)
@@ -644,9 +632,9 @@ fun TroubleshootingScreen() {
                                         showTroubleshootingSteps = false
                                     },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = buttonBgColor,
+                                    cornerRadius = 10.dp,
+                                    colors = MiuixButtonDefaults.buttonColors(
+                                        color = buttonBgColor,
                                         contentColor = textColor
                                     )
                                 ) {
@@ -659,104 +647,92 @@ fun TroubleshootingScreen() {
             }
 
             if (showDeleteDialog && selectedLogFile != null) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    title = { Text("Delete Log File") },
-                    text = {
-                        Text("Are you sure you want to delete this log file? This action cannot be undone.")
-                    },
-                    confirmButton = {
-                        TextButton(
+                WindowDialog(
+                    show = showDeleteDialog,
+                    title = "Delete Log File",
+                    summary = "Are you sure you want to delete this log file? This action cannot be undone.",
+                    onDismissRequest = { showDeleteDialog = false }
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        Button(onClick = { showDeleteDialog = false }) {
+                            Text("Cancel")
+                        }
+                        Button(
                             onClick = {
                                 selectedLogFile?.let { file ->
                                     if (file.delete()) {
                                         savedLogs.remove(file)
-                                        Toast.makeText(
-                                            context,
-                                            "Log file deleted",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                            .show()
+                                        Toast.makeText(context, "Log file deleted", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Toast.makeText(
-                                            context,
-                                            "Failed to delete log file",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        Toast.makeText(context, "Failed to delete log file", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                                 showDeleteDialog = false
-                            }
+                            },
+                            colors = MiuixButtonDefaults.buttonColors(
+                                color = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
                         ) {
-                            Text("Delete", color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteDialog = false }) {
-                            Text("Cancel")
+                            Text("Delete")
                         }
                     }
-                )
+                }
             }
 
             if (showDeleteAllDialog) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteAllDialog = false },
-                    title = { Text("Delete All Logs") },
-                    text = {
-                        Text("Are you sure you want to delete all log files? This action cannot be undone and will remove ${savedLogs.size} log files.")
-                    },
-                    confirmButton = {
-                        TextButton(
+                WindowDialog(
+                    show = showDeleteAllDialog,
+                    title = "Delete All Logs",
+                    summary = "Are you sure you want to delete all log files? This action cannot be undone and will remove ${savedLogs.size} log files.",
+                    onDismissRequest = { showDeleteAllDialog = false }
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        Button(onClick = { showDeleteAllDialog = false }) {
+                            Text("Cancel")
+                        }
+                        Button(
                             onClick = {
                                 coroutineScope.launch(Dispatchers.IO) {
                                     var deletedCount = 0
                                     savedLogs.forEach { file ->
-                                        if (file.delete()) {
-                                            deletedCount++
-                                        }
+                                        if (file.delete()) deletedCount++
                                     }
                                     withContext(Dispatchers.Main) {
                                         if (deletedCount > 0) {
                                             savedLogs.clear()
-                                            Toast.makeText(
-                                                context,
-                                                "Deleted $deletedCount log files",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                            Toast.makeText(context, "Deleted $deletedCount log files", Toast.LENGTH_SHORT).show()
                                         } else {
-                                            Toast.makeText(
-                                                context,
-                                                "Failed to delete log files",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                            Toast.makeText(context, "Failed to delete log files", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 }
                                 showDeleteAllDialog = false
-                            }
+                            },
+                            colors = MiuixButtonDefaults.buttonColors(
+                                color = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
                         ) {
-                            Text("Delete All", color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteAllDialog = false }) {
-                            Text("Cancel")
+                            Text("Delete All")
                         }
                     }
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(bottomPadding))
         }
 
         if (showBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState,
-                containerColor = if (isDarkTheme) Color(0xFF1C1C1E) else Color(0xFFF2F2F7),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                tonalElevation = 8.dp
+            WindowBottomSheet(
+                show = showBottomSheet,
+                onDismissRequest = { showBottomSheet = false }
             ) {
                 LaunchedEffect(selectedLogFile) {
                     if (!logContentLoaded) {
@@ -790,7 +766,6 @@ fun TroubleshootingScreen() {
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
-                                fontFamily = FontFamily(Font(R.font.sf_pro))
                             ),
                             color = textColor
                         )
@@ -799,7 +774,6 @@ fun TroubleshootingScreen() {
                                 .format(Date(selectedLogFile?.lastModified() ?: 0)),
                             fontSize = 14.sp,
                             color = textColor.copy(alpha = 0.7f),
-                            fontFamily = FontFamily(Font(R.font.sf_pro))
                         )
                     }
 
@@ -810,7 +784,7 @@ fun TroubleshootingScreen() {
                                 .height(300.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(color = accentColor)
+                            CircularProgressIndicator()
                         }
                     } else {
                         Box(
@@ -871,9 +845,9 @@ fun TroubleshootingScreen() {
                                     )
                                 }
                             },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = buttonBgColor,
+                            cornerRadius = 10.dp,
+                            colors = MiuixButtonDefaults.buttonColors(
+                                color = buttonBgColor,
                                 contentColor = textColor
                             ),
                             modifier = Modifier.weight(1f)
@@ -892,9 +866,9 @@ fun TroubleshootingScreen() {
                                     saveLauncher.launch(file.absolutePath)
                                 }
                             },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = buttonBgColor,
+                            cornerRadius = 10.dp,
+                            colors = MiuixButtonDefaults.buttonColors(
+                                color = buttonBgColor,
                                 contentColor = textColor
                             ),
                             modifier = Modifier.weight(1f)

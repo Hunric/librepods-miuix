@@ -16,7 +16,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,29 +36,22 @@ import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 fun CallControlScreen(viewModel: AirPodsViewModel, action: String, onCallControlValueChanged: (Boolean) -> Unit) {
     val state by viewModel.uiState.collectAsState()
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
-    val topPadding = if (m3eEnabled) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
-    val bottomPadding = if (m3eEnabled) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
+    val isMiuix = LocalDesignSystem.current == DesignSystem.Miuix
+    val topPadding = if (isMiuix) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
+    val bottomPadding = if (isMiuix) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
 
     val scrollState = rememberScrollState()
 
-    val bytes =
-        state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.CALL_MANAGEMENT_CONFIG]?.take(
-            2
-        )?.toByteArray() ?: byteArrayOf(0x00, 0x00)
-    val flipped = try {
-        bytes[1] == 0x02.toByte()
-    } catch (e: Exception) {
-        false
-    }
+    val callConfig = state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.CALL_MANAGEMENT_CONFIG]
+    val flipped = callConfig?.takeIf {
+        it.size >= 2 && it[0] == 0x00.toByte() && it[1] in listOf(0x02.toByte(), 0x03.toByte())
+    }?.let { it[1] == 0x02.toByte() }
 
     val pressOnceText = stringResource(R.string.press_once)
     val pressTwiceText = stringResource(R.string.press_twice)
     val muteUnmuteText = stringResource(R.string.mute_unmute)
 
-    var singlePressAction by remember { mutableStateOf(if ((action == muteUnmuteText) == !flipped) pressOnceText else pressTwiceText) }
-
-    val pressOnceIsAction by remember { derivedStateOf { singlePressAction == pressOnceText } }
+    val pressOnceIsAction = flipped?.let { (action == muteUnmuteText) == !it } ?: false
     val flippedValue = action != muteUnmuteText
 
     Column(
@@ -75,18 +67,18 @@ fun CallControlScreen(viewModel: AirPodsViewModel, action: String, onCallControl
         StyledList {
             StyledListItem(
                 name = pressOnceText,
-                selected = pressOnceIsAction,
+                selected = flipped != null && pressOnceIsAction,
+                enabled = flipped != null,
                 onClick = {
-                    singlePressAction = pressOnceText
                     onCallControlValueChanged(flippedValue)
                 }
             )
 
             StyledListItem(
                 name = pressTwiceText,
-                selected = !pressOnceIsAction,
+                selected = flipped != null && !pressOnceIsAction,
+                enabled = flipped != null,
                 onClick = {
-                    singlePressAction = pressTwiceText
                     onCallControlValueChanged(!flippedValue)
                 }
             )

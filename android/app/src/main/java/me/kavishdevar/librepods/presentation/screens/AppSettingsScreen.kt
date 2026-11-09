@@ -25,7 +25,6 @@ import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,20 +37,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -65,16 +59,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -91,14 +80,15 @@ import me.kavishdevar.librepods.presentation.components.StyledList
 import me.kavishdevar.librepods.presentation.components.StyledListItem
 import me.kavishdevar.librepods.presentation.components.StyledSlider
 import me.kavishdevar.librepods.presentation.components.StyledToggle
-import me.kavishdevar.librepods.presentation.theme.DesignSystem
-import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
 import me.kavishdevar.librepods.presentation.theme.MaterialTypography
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.window.WindowDialog
 import me.kavishdevar.librepods.presentation.viewmodel.AppSettingsViewModel
 import me.kavishdevar.librepods.utils.XposedState
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppSettingsScreen(
     viewModel: AppSettingsViewModel = viewModel(),
@@ -110,6 +100,7 @@ fun AppSettingsScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     val state by viewModel.uiState.collectAsState()
+    val customCameraPackageSetSuccess = stringResource(R.string.custom_camera_package_set_success)
 
     val backdrop = rememberLayerBackdrop()
 
@@ -119,9 +110,8 @@ fun AppSettingsScreen(
     val subjectFocusRequester = remember { FocusRequester() }
     val descriptionFocusRequester = remember { FocusRequester() }
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
-    val topPadding = if (m3eEnabled) 16.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
-    val bottomPadding = if (m3eEnabled) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
+    val topPadding = 16.dp
+    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
 
     Column(
         modifier = Modifier
@@ -132,8 +122,6 @@ fun AppSettingsScreen(
             .padding(horizontal = 16.dp)
     ) {
         Spacer(modifier = Modifier.height(topPadding))
-
-        val isDarkTheme = isSystemInDarkTheme()
 
         if (!state.isPremium && state.connectionSuccessful) {
             StyledButton(
@@ -154,8 +142,8 @@ fun AppSettingsScreen(
         if (state.timeUntilFOSSPremiumExpiry > 0L) {
             Box(
                 modifier = Modifier
-                    .background(Color(0xFF32829B), RoundedCornerShape(28.dp))
-                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .clickable {
                         val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
                             data = "mailto:".toUri()
@@ -175,23 +163,20 @@ fun AppSettingsScreen(
                     ),
                     modifier = Modifier
                         .padding(16.dp),
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontFamily = FontFamily(Font(R.font.sf_pro))
-                    )
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
 
-        StyledToggle(
-            title = stringResource(R.string.appearance),
-            label = stringResource(R.string.use_material3e),
-            checked = state.m3eEnabled,
-            onCheckedChange = viewModel::setm3eEnabled,
-            enabled = state.isPremium
-        )
+        StyledList(title = stringResource(R.string.appearance)) {
+            StyledListItem(
+                name = stringResource(R.string.interface_style),
+                description = stringResource(R.string.miuix),
+                onClick = null,
+                enabled = false
+            )
+        }
 
         if (state.connectionSuccessful) {
             StyledToggle(
@@ -253,6 +238,7 @@ fun AppSettingsScreen(
                 snapPoints = listOf(44f),
                 startLabel = "10%",
                 endLabel = "85%",
+                valueText = "${conversationAwarenessVolume.roundToInt()}%",
                 onValueChange = { newValue ->
                     viewModel.setConversationAwarenessVolume(
                         newValue
@@ -451,71 +437,52 @@ fun AppSettingsScreen(
         Spacer(modifier = Modifier.height(bottomPadding))
 
         if (state.showCameraDialog) {
-            AlertDialog(onDismissRequest = { viewModel.setShowCameraDialog(false) }, title = {
-                Text(
-                    stringResource(R.string.set_custom_camera_package),
-                    fontFamily = FontFamily(Font(R.font.sf_pro)),
-                    fontWeight = FontWeight.Medium
-                )
-            }, text = {
+            WindowDialog(
+                show = state.showCameraDialog,
+                title = stringResource(R.string.set_custom_camera_package),
+                onDismissRequest = { viewModel.setShowCameraDialog(false) }
+            ) {
                 Column {
                     Text(
                         stringResource(R.string.enter_custom_camera_package),
-                        fontFamily = FontFamily(Font(R.font.sf_pro)),
+                        style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    OutlinedTextField(
+                    TextField(
                         value = state.cameraPackageValue,
                         onValueChange = {
                             viewModel.setCameraPackageValue(it)
                             viewModel.setCameraPackageError(null)
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        isError = state.cameraPackageError != null,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Ascii,
                             capitalization = KeyboardCapitalization.None
                         ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = if (isDarkTheme) Color(0xFF007AFF) else Color(
-                                0xFF3C6DF5
-                            ),
-                            unfocusedBorderColor = if (isDarkTheme) Color.Gray else Color.LightGray
-                        ),
-                        supportingText = {
-                            if (state.cameraPackageError != null) {
-                                Text(
-                                    state.cameraPackageError ?: "",
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        },
-                        label = { Text(stringResource(R.string.custom_camera_package)) })
-                }
-            }, confirmButton = {
-                val successText = stringResource(R.string.custom_camera_package_set_success)
-                TextButton(
-                    onClick = {
-                        viewModel.saveCameraPackage()
-                        Toast.makeText(context, successText, Toast.LENGTH_SHORT).show()
-                    }) {
-                    Text(
-                        "Save",
-                        fontFamily = FontFamily(Font(R.font.sf_pro)),
-                        fontWeight = FontWeight.Medium
+                        label = stringResource(R.string.custom_camera_package),
+                        singleLine = true
                     )
+                    state.cameraPackageError?.let { error ->
+                        Text(error, color = MaterialTheme.colorScheme.error)
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(onClick = { viewModel.setShowCameraDialog(false) }) {
+                            Text(stringResource(R.string.cancel))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = {
+                            viewModel.saveCameraPackage()
+                            Toast.makeText(context, customCameraPackageSetSuccess, Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text(stringResource(R.string.save))
+                        }
+                    }
                 }
-            }, dismissButton = {
-                TextButton(
-                    onClick = { viewModel.setShowCameraDialog(false) }) {
-                    Text(
-                        "Cancel",
-                        fontFamily = FontFamily(Font(R.font.sf_pro)),
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            })
+            }
         }
     }
 
@@ -544,21 +511,17 @@ fun AppSettingsScreen(
                    backdrop = innerBackdrop,
                    onClick = { contactBottomSheet.value = false }
                )
-               Text (
+               Text(
                    text = stringResource(R.string.describe_your_issue),
-                   style = TextStyle(
-                       fontSize = 18.sp,
-                       fontFamily = FontFamily(Font(R.font.sf_pro)),
-                       fontWeight = FontWeight.Bold,
-                       textAlign = TextAlign.Center,
-                       color = if (isSystemInDarkTheme()) Color.White else Color.Black
-                   )
+                   style = MaterialTheme.typography.titleMedium,
+                   textAlign = TextAlign.Center,
+                   color = MaterialTheme.colorScheme.onSurface
                )
                StyledIconButton(
                    icon = "\uDBC0\uDE1F",
                    backdrop = innerBackdrop,
-                   surfaceColor = if (isSystemInDarkTheme()) Color(0xFF0091FF) else Color(0xFF0088FF),
-                   iconTint = if (subjectState.text.isNotEmpty() && descriptionState.text.isNotEmpty()) Color.White else Color.Gray,
+                   surfaceColor = if (subjectState.text.isNotEmpty() && descriptionState.text.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                   iconTint = if (subjectState.text.isNotEmpty() && descriptionState.text.isNotEmpty()) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                    enabled = subjectState.text.isNotEmpty() && descriptionState.text.isNotEmpty(),
                    onClick = {
                        contactBottomSheet.value = false
@@ -596,7 +559,6 @@ fun AppSettingsScreen(
                inputState = subjectState,
                focusRequester = subjectFocusRequester,
                placeholder = stringResource(R.string.subject),
-               forceApple = true
            )
 
            Spacer(modifier = Modifier.height(12.dp))
@@ -606,7 +568,6 @@ fun AppSettingsScreen(
                focusRequester = descriptionFocusRequester,
                placeholder = stringResource(R.string.describe_your_issue),
                singleLine = false,
-               forceApple = true
            )
         }
     }

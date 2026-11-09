@@ -44,12 +44,11 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="HardcodedText" />
     </androidx.constraintlayout.widget.ConstraintLayout>
-    <VideoView
+    <me.kavishdevar.librepods.presentation.overlays.LoopingVideoTextureView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/video"
         android:contentDescription="AirPods"
-        android:src="@raw/connected"
         tools:ignore="HardcodedText" />
 
     <LinearLayout

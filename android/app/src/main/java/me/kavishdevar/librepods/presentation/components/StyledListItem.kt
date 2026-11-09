@@ -62,14 +62,22 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
+import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
 import me.kavishdevar.librepods.presentation.theme.sectionHeader
+import top.yukonga.miuix.kmp.basic.Card as MiuixCard
+import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun StyledListItem(
@@ -84,7 +92,46 @@ fun StyledListItem(
     leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null
 ) {
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
+    if (LocalDesignSystem.current == DesignSystem.Miuix) {
+        val isInStyledListCard = LocalIsInStyledListCard.current
+        val itemContent: @Composable () -> Unit = {
+            StyledListItemContent(
+                modifier = if (isInStyledListCard) modifier else Modifier,
+                name = name,
+                onClick = onClick,
+                description = description,
+                height = height,
+                enabled = enabled,
+                index = 0,
+                count = 1,
+                orientation = orientation,
+                leadingContent = leadingContent,
+                trailingContent = trailingContent,
+            )
+        }
+        Column {
+            title?.let {
+                MiuixText(
+                    text = it,
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                )
+            }
+            if (isInStyledListCard) {
+                itemContent()
+            } else {
+                MiuixCard(
+                    modifier = modifier.fillMaxWidth(),
+                    insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                ) {
+                    itemContent()
+                }
+            }
+        }
+        return
+    }
+    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Miuix
     Column {
         title?.let {
             Box(
@@ -323,86 +370,97 @@ private fun StyledListItemContent(
             }
         }
 
-        DesignSystem.Material -> {
-            val defaultShape = when {
-                count == 1 -> RoundedCornerShape(24.dp)
-
-                index == 0 -> RoundedCornerShape(
-                    topStart = 24.dp,
-                    topEnd = 24.dp,
-                    bottomStart = 8.dp,
-                    bottomEnd = 8.dp
-                )
-
-                index == count - 1 -> RoundedCornerShape(
-                    topStart = 8.dp,
-                    topEnd = 8.dp,
-                    bottomStart = 24.dp,
-                    bottomEnd = 24.dp
-                )
-
-                else -> RoundedCornerShape(8.dp)
-            }
-            Column {
-                SegmentedListItem(
-                    modifier = modifier.heightIn(min = 64.dp),
-                    shapes = ListItemDefaults.shapes().copy(
-                        shape = defaultShape,
-                        pressedShape = RoundedCornerShape(24.dp),
-                        selectedShape = RoundedCornerShape(24.dp),
-                        hoveredShape = RoundedCornerShape(24.dp),
-                    ),
-                    onClick = onClick ?: {},
-                    leadingContent = leadingContent,
-                    trailingContent = {
-                        if (trailingContent == null) {
-                            if (onClick != null) {
-                                if (selected == true) {
-                                    Icon(Icons.Default.Check, contentDescription = null)
-                                } else if (selected == null) {
-                                    Icon(
-                                        Icons.AutoMirrored.Default.KeyboardArrowRight,
-                                        contentDescription = null
-                                    )
-                                }
-                            }
-                        } else {
-                            trailingContent()
-                        }
-                    },
-                    supportingContent = {
-                        if (description != null) Text(
-                            description,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 4.dp)
+        DesignSystem.Miuix -> {
+            val trailing: (@Composable () -> Unit)? = when {
+                trailingContent != null -> trailingContent
+                onClick != null && selected == true -> {
+                    {
+                        MiuixIcon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = MiuixTheme.colorScheme.primary,
                         )
-                    },
-                    content = {
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.labelMediumEmphasized,
-                            modifier = Modifier.padding(
-                                top = 4.dp,
-                                bottom = if (description != null) 0.dp else 4.dp
-                            )
-                        )
-                    },
-                    verticalAlignment = Alignment.CenterVertically,
-                    colors = if (onClick == null) {
-                            ListItemDefaults.segmentedColors().run {
-                                copy(
-                                    disabledContentColor = contentColor,
-                                    disabledSupportingContentColor = supportingContentColor,
-                                    disabledTrailingContentColor = trailingContentColor
-                                )
-                            }
-                        } else ListItemDefaults.segmentedColors(),
-                    enabled = onClick != null && enabled,
-                    selected = selected ?: false
-                )
-                if (index+1 != count) {
-                    Spacer(modifier = Modifier.height(2.dp))
+                    }
                 }
+                onClick != null && selected == null -> {
+                    {
+                        MiuixIcon(
+                            imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                            contentDescription = null,
+                        )
+                    }
+                }
+                else -> null
+            }
+            val selectionModifier = if (selected != null) {
+                Modifier.semantics { this.selected = selected }
+            } else {
+                Modifier
+            }
+            if (orientation == ListItemOrientation.Vertical) {
+                MiuixSettingsRow(
+                    title = name,
+                    summary = description,
+                    titleStyle = MiuixTheme.textStyles.headline2,
+                    modifier = modifier.heightIn(min = height).fillMaxWidth().then(selectionModifier),
+                    leading = leadingContent,
+                    trailing = if (trailingContent == null) trailing else null,
+                    bottom = trailingContent,
+                    onClick = onClick,
+                    enabled = enabled,
+                )
+            } else {
+                MiuixSettingsRow(
+                    title = name,
+                    summary = description,
+                    modifier = modifier.heightIn(min = height).fillMaxWidth().then(selectionModifier),
+                    leading = leadingContent,
+                    trailing = trailing,
+                    onClick = onClick,
+                    enabled = enabled,
+                )
+            }
+            if (index + 1 != count) Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+}
+
+@Preview(name = "Miuix selection states", showBackground = true)
+@Composable
+private fun StyledListItemSelectionPreview() {
+    LibrePodsTheme {
+        var horizontalSelected by remember { mutableStateOf(false) }
+
+        Column(modifier = Modifier.padding(16.dp)) {
+            StyledList(
+                title = "Vertical selection states",
+            ) {
+                StyledListItem(
+                    name = "Selected",
+                    description = "This item is selected",
+                    onClick = {},
+                    orientation = ListItemOrientation.Vertical,
+                    selected = true,
+                )
+                StyledListItem(
+                    name = "Not selected",
+                    description = "This item is not selected",
+                    onClick = {},
+                    orientation = ListItemOrientation.Vertical,
+                    selected = false,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            StyledList(
+                title = "Horizontal selection",
+            ) {
+                StyledListItem(
+                    name = "Tap to toggle",
+                    onClick = { horizontalSelected = !horizontalSelected },
+                    selected = horizontalSelected,
+                )
             }
         }
     }

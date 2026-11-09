@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -80,6 +81,11 @@ import dev.chrisbanes.haze.rememberHazeState
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
+import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
+import top.yukonga.miuix.kmp.basic.Scaffold as MiuixScaffold
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,9 +103,9 @@ fun StyledScaffold(
     val hazeState = rememberHazeState(blurEnabled = true)
 
     when (LocalDesignSystem.current) {
-        DesignSystem.Material -> {
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        DesignSystem.Miuix -> {
+            MiuixScaffold(
+                containerColor = MiuixTheme.colorScheme.background,
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 topBar = {
                     AnimatedVisibility(
@@ -107,54 +113,41 @@ fun StyledScaffold(
                         enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
                         exit = fadeOut() + slideOutVertically(targetOffsetY = { -it })
                     ) {
-                        TopAppBar(
+                        SmallTopAppBar(
+                            title = title,
                             navigationIcon = {
                                 if (showBackButton) {
-                                    Row {
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        FilledTonalIconButton(
+                                    MiuixIconButton(
                                             onClick = onNavigateBack,
-                                            modifier = Modifier
-                                                .minimumInteractiveComponentSize()
-                                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Narrow)),
-                                            shape = IconButtonDefaults.mediumRoundShape
+                                            modifier = Modifier.padding(start = 12.dp),
                                         ) {
-                                            Icon(
-                                                Icons.AutoMirrored.Default.ArrowBack,
-                                                contentDescription = "",
-                                                modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
+                                            MiuixIcon(
+                                                imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                                                contentDescription = "Navigate back",
                                             )
                                         }
-                                    }
-                                }
-                            },
-                            title = {
-                                Crossfade(targetState = title) {
-                                    Text(
-                                        text = it,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(start = if (showBackButton) 8.dp else 12.dp, end = 12.dp),
-                                        style = MaterialTheme.typography.titleSmall
-                                    )
                                 }
                             },
                             actions = {
                                 actionButtons.forEach { actionButton ->
                                     actionButton(rememberLayerBackdrop())
                                 }
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                             },
-                            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                            defaultWindowInsetsPadding = true,
                         )
                     }
                 },
             ) { paddingValues ->
                 Box(
                     modifier = modifier
-                        .then(if (visible) Modifier.padding(paddingValues) else Modifier)
+                        .then(
+                            if (visible) Modifier
+                                .padding(paddingValues)
+                                .consumeWindowInsets(paddingValues)
+                            else Modifier
+                        )
                         .fillMaxSize()
-                        .hazeSource(hazeState)
                 ) {
                     content()
                 }

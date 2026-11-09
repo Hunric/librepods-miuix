@@ -9,6 +9,9 @@
          <item name="android:windowLightNavigationBar" >true</item>
          <item name="android:statusBarColor">@android:color/transparent</item>
          <item name="android:navigationBarColor">@android:color/transparent</item>
+         <item name="android:windowBackground">@color/startup_background</item>
+         <item name="android:windowSplashScreenBackground">@color/startup_background</item>
+         <item name="android:windowSplashScreenAnimatedIcon">@drawable/startup_logo</item>
     </style>
 
     <!-- Theme for the transparent dialog activity -->

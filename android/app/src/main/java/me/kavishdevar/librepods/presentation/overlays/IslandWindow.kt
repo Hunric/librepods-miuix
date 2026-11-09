@@ -33,7 +33,6 @@ import android.content.IntentFilter
 import android.content.res.Resources
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
-import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -45,7 +44,6 @@ import android.view.VelocityTracker
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
-import android.view.animation.AnticipateOvershootInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
@@ -53,8 +51,6 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.VideoView
-import androidx.core.net.toUri
 import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
@@ -248,7 +244,9 @@ class IslandWindow(private val context: Context) {
             width,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -373,39 +371,61 @@ class IslandWindow(private val context: Context) {
             }
         }
 
-        val videoView = islandView.findViewById<VideoView>(R.id.island_video_view)
-        val videoUri = "android.resource://me.kavishdevar.librepods/${R.raw.island}".toUri()
-        videoView.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
-        videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mediaPlayer ->
-            mediaPlayer.isLooping = true
-            videoView.start()
-        }
+        val videoView = islandView.findViewById<LoopingVideoTextureView>(R.id.island_video_view)
+        videoView.visibility = View.VISIBLE
+        videoView.play(R.raw.island)
 
+        params!!.alpha = 0f
         try {
             windowManager.addView(containerView, params)
         } catch (e: Exception) {
-            e.printStackTrace()
+            e("IslandWindow", "Unable to add island window: $e")
+            ServiceManager.getService()?.islandOpen = false
+            videoView.visibility = View.VISIBLE
+            videoView.releasePlayer()
+            return
         }
 
         islandView.post {
             initialHeight = islandView.height
             captureInitialPositions()
+            islandView.postOnAnimation {
+                val windowParams = params
+                if (isClosing || containerView.parent == null) {
+                    if (windowParams != null && containerView.parent != null) {
+                        windowParams.alpha = 1f
+                        windowManager.updateViewLayout(containerView, windowParams)
+                    }
+                    return@postOnAnimation
+                }
+                if (windowParams == null) return@postOnAnimation
+
+                windowParams.alpha = 1f
+                windowManager.updateViewLayout(containerView, windowParams)
+
+                val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 0.5f, 1f)
+                val scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.5f, 1f)
+                val translationY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -200f, 0f)
+                containerView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                ObjectAnimator.ofPropertyValuesHolder(containerView, scaleX, scaleY, translationY).apply {
+                    duration = 420
+                    interpolator = DecelerateInterpolator(1.35f)
+                    addListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator) {
+                            if (!isClosing) {
+                                containerView.setLayerType(View.LAYER_TYPE_NONE, null)
+                            }
+                        }
+                    })
+                    start()
+                }
+            }
         }
 
         springAnimation = SpringAnimation(containerView, DynamicAnimation.TRANSLATION_Y, 0f).apply {
             spring = SpringForce(0f)
                 .setDampingRatio(SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY)
                 .setStiffness(SpringForce.STIFFNESS_MEDIUM)
-        }
-
-        val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 0.5f, 1f)
-        val scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.5f, 1f)
-        val translationY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, -200f, 0f)
-        ObjectAnimator.ofPropertyValuesHolder(containerView, scaleX, scaleY, translationY).apply {
-            duration = 700
-            interpolator = AnticipateOvershootInterpolator()
-            start()
         }
 
         resetAutoCloseTimer()
@@ -415,7 +435,7 @@ class IslandWindow(private val context: Context) {
         val connectedText = islandView.findViewById<TextView>(R.id.island_connected_text)
         val deviceText = islandView.findViewById<TextView>(R.id.island_device_name)
         val batteryView = islandView.findViewById<FrameLayout>(R.id.island_battery_container)
-        val videoView = islandView.findViewById<VideoView>(R.id.island_video_view)
+        val videoView = islandView.findViewById<LoopingVideoTextureView>(R.id.island_video_view)
 
         connectedText.post {
             initialConnectedTextY = connectedText.y
@@ -433,7 +453,7 @@ class IslandWindow(private val context: Context) {
             islandView.findViewById<TextView>(R.id.island_connected_text)
             val deviceText = islandView.findViewById<TextView>(R.id.island_device_name)
             islandView.findViewById<FrameLayout>(R.id.island_battery_container)
-            islandView.findViewById<VideoView>(R.id.island_video_view)
+            islandView.findViewById<LoopingVideoTextureView>(R.id.island_video_view)
 
             val stretchFactor = 1f + (stretchAmount / 300f).coerceAtMost(4.0f)
             val newMinHeight = (initialHeight * stretchFactor).toInt()
@@ -604,7 +624,7 @@ class IslandWindow(private val context: Context) {
             containerView.alpha = progress
 
             if (progress < 0.7f) {
-                islandView.findViewById<VideoView>(R.id.island_video_view).visibility = View.GONE
+                islandView.findViewById<LoopingVideoTextureView>(R.id.island_video_view).visibility = View.GONE
             }
         }
         normalizeAnimator.addListener(object : AnimatorListenerAdapter() {
@@ -666,21 +686,25 @@ class IslandWindow(private val context: Context) {
             ServiceManager.getService()?.islandOpen = false
             autoCloseHandler?.removeCallbacks(autoCloseRunnable ?: return)
 
-            resetStretchEffects()
+            params?.alpha = 1f
+            if (containerView.parent != null) {
+                windowManager.updateViewLayout(containerView, params)
+            }
 
-            val videoView = islandView.findViewById<VideoView>(R.id.island_video_view)
+            val videoView = islandView.findViewById<LoopingVideoTextureView>(R.id.island_video_view)
             try {
-                videoView.stopPlayback()
+                videoView.pause()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
+            containerView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
             val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, containerView.scaleX, 0.5f)
             val scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, containerView.scaleY, 0.5f)
             val translationY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, containerView.translationY, -200f)
             ObjectAnimator.ofPropertyValuesHolder(containerView, scaleX, scaleY, translationY).apply {
-                duration = 700
-                interpolator = AnticipateOvershootInterpolator()
+                duration = 280
+                interpolator = AccelerateInterpolator(1.35f)
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
                         cleanupAndRemoveView()
@@ -712,6 +736,8 @@ class IslandWindow(private val context: Context) {
         } catch (e: Exception) {
             e("IslandWindow", "Error removing view: $e")
         }
+        containerView.setLayerType(View.LAYER_TYPE_NONE, null)
+        islandView.findViewById<LoopingVideoTextureView>(R.id.island_video_view).releasePlayer()
         isClosing = false
         // Make sure all animations are canceled
         try {

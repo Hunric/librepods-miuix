@@ -27,6 +27,7 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButton
@@ -86,7 +88,11 @@ import com.kyant.backdrop.shadow.InnerShadow
 import kotlinx.coroutines.launch
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
+import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import me.kavishdevar.librepods.utils.inspectDragGestures
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -106,68 +112,34 @@ fun StyledIconButton(
     materialButtonStyle: MaterialButtonStyle = MaterialButtonStyle.Normal
 ) {
     when (LocalDesignSystem.current) {
-        DesignSystem.Material -> {
-            when (materialButtonStyle) {
-                MaterialButtonStyle.Tonal -> {
-                    FilledTonalIconButton(
-                        onClick = onClick,
-                        enabled = enabled,
-                        modifier = Modifier.size(52.dp)
-                    ) {
-                        Text(
-                            text = icon,
-                            style = TextStyle(
-                                fontSize = 20.sp,
-                                fontFamily = FontFamily(Font(R.font.sf_pro))
-                            )
-                        )
-                    }
-                }
-                MaterialButtonStyle.Filled -> {
-                    FilledIconButton(
-                        onClick = onClick,
-                        enabled = enabled,
-                        modifier = Modifier.size(52.dp)
-                    ) {
-                        Text(
-                            text = icon,
-                            style = TextStyle(
-                                fontSize = 20.sp,
-                                fontFamily = FontFamily(Font(R.font.sf_pro))
-                            )
-                        )
-                    }
-                }
-                MaterialButtonStyle.Outlined -> {
-                    OutlinedIconButton(
-                        onClick = onClick,
-                        enabled = enabled,
-                        modifier = Modifier.size(52.dp)
-                    ) {
-                        Text(
-                            text = icon,
-                            style = TextStyle(
-                                fontSize = 20.sp,
-                                fontFamily = FontFamily(Font(R.font.sf_pro))
-                            )
-                        )
-                    }
-                }
-                MaterialButtonStyle.Normal -> {
-                    IconButton(
-                        onClick = onClick,
-                        enabled = enabled,
-                        modifier = Modifier.size(52.dp)
-                    ) {
-                        Text(
-                            text = icon,
-                            style = TextStyle(
-                                fontSize = 20.sp,
-                                fontFamily = FontFamily(Font(R.font.sf_pro))
-                            )
-                        )
-                    }
-                }
+        DesignSystem.Miuix -> {
+            val background = when (materialButtonStyle) {
+                MaterialButtonStyle.Tonal -> surfaceColor.takeIf { it.isSpecified }
+                    ?: MiuixTheme.colorScheme.secondaryVariant
+                MaterialButtonStyle.Filled -> surfaceColor.takeIf { it.isSpecified }
+                    ?: MiuixTheme.colorScheme.primary
+                MaterialButtonStyle.Outlined, MaterialButtonStyle.Normal -> surfaceColor
+            }
+            val foreground = iconTint.takeIf { it.isSpecified } ?: when (materialButtonStyle) {
+                MaterialButtonStyle.Filled -> MiuixTheme.colorScheme.onPrimary
+                else -> if (enabled) MiuixTheme.colorScheme.onSurface else MiuixTheme.colorScheme.disabledOnSurface
+            }
+            val buttonModifier = if (materialButtonStyle == MaterialButtonStyle.Outlined) {
+                modifier.border(1.dp, MiuixTheme.colorScheme.outline, CircleShape)
+            } else modifier
+            MiuixIconButton(
+                onClick = onClick,
+                enabled = enabled,
+                modifier = buttonModifier,
+                backgroundColor = background,
+                cornerRadius = 40.dp,
+            ) {
+                MiuixText(
+                    text = icon,
+                    color = foreground,
+                    style = MiuixTheme.textStyles.headline2,
+                    fontFamily = FontFamily(Font(R.font.sf_pro)),
+                )
             }
         }
         DesignSystem.Apple -> {
@@ -422,16 +394,18 @@ half4 main(float2 coord) {
 @Preview(uiMode = UI_MODE_NIGHT_YES, name = "Dark")
 @Composable
 fun StyledIconButtonPreview() {
+    LibrePodsTheme(darkTheme = isSystemInDarkTheme()) {
     Box(modifier = Modifier
         .height(120.dp)
         .width(200.dp)
         .background(
-            if (isSystemInDarkTheme()) Color(0xFF000000) else Color(0xFFF2F2F7),
+            MiuixTheme.colorScheme.background,
             RoundedCornerShape(28.dp)
         ), contentAlignment = Alignment.Center) {
         StyledIconButton(
             icon = "􀍟",
             onClick = { }
         )
+    }
     }
 }

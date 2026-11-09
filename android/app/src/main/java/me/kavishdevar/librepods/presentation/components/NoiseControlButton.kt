@@ -18,17 +18,10 @@
 
 package me.kavishdevar.librepods.presentation.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -36,6 +29,10 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import me.kavishdevar.librepods.R
+import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
+import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
+import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun NoiseControlButton(
@@ -45,19 +42,14 @@ fun NoiseControlButton(
     modifier: Modifier = Modifier,
     usePadding: Boolean = true
 ) {
-    Column(
+    MiuixIconButton(
+        onClick = onClick,
         modifier = modifier
             .fillMaxHeight()
-            .then(if (usePadding) Modifier.padding(horizontal = 4.dp, vertical = 4.dp) else Modifier)
-            .clickable(
-                onClick = onClick,
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .then(if (usePadding) Modifier.padding(horizontal = 4.dp, vertical = 4.dp) else Modifier),
+        backgroundColor = Color.Transparent,
     ) {
-        Icon(
+        MiuixIcon(
             bitmap = icon,
             contentDescription = null,
             tint = textColor,
@@ -69,9 +61,11 @@ fun NoiseControlButton(
 @Preview
 @Composable
 fun NoiseControlButtonPreview() {
-    NoiseControlButton(
-        icon = ImageBitmap.imageResource(R.drawable.noise_cancellation),
-        onClick = {},
-        textColor = Color.White,
-    )
+    LibrePodsTheme() {
+        NoiseControlButton(
+            icon = ImageBitmap.imageResource(R.drawable.noise_cancellation),
+            onClick = {},
+            textColor = MiuixTheme.colorScheme.onSurface,
+        )
+    }
 }

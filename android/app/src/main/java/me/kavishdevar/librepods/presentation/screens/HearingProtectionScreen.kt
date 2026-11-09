@@ -43,6 +43,7 @@ import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.bluetooth.AACPManager
 import me.kavishdevar.librepods.bluetooth.ATTHandles
 import me.kavishdevar.librepods.presentation.components.StyledButton
+import me.kavishdevar.librepods.presentation.components.StyledListItem
 import me.kavishdevar.librepods.presentation.components.StyledToggle
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
@@ -53,9 +54,9 @@ fun HearingProtectionScreen(viewModel: AirPodsViewModel, navigateToPurchase: () 
     val backdrop = rememberLayerBackdrop()
     val state by viewModel.uiState.collectAsState()
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
-    val topPadding = if (m3eEnabled) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
-    val bottomPadding = if (m3eEnabled) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
+    val isMiuix = LocalDesignSystem.current == DesignSystem.Miuix
+    val topPadding = if (isMiuix) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
+    val bottomPadding = if (isMiuix) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
 
     Column(
         modifier = Modifier
@@ -84,18 +85,18 @@ fun HearingProtectionScreen(viewModel: AirPodsViewModel, navigateToPurchase: () 
 
         if (state.vendorIdHook) {
             StyledToggle(
-                title = stringResource(R.string.environmental_noise),
-                label = stringResource(R.string.loud_sound_reduction),
-                description = stringResource(R.string.loud_sound_reduction_description),
-                checked = state.loudSoundReductionEnabled,
-                onCheckedChange = {
-                    viewModel.setATTCharacteristicValue(
-                        ATTHandles.LOUD_SOUND_REDUCTION,
-                        byteArrayOf(if (it) 1.toByte() else 0.toByte())
-                    )
-                },
-                enabled = state.isPremium
-            )
+                    title = stringResource(R.string.environmental_noise),
+                    label = stringResource(R.string.loud_sound_reduction),
+                    description = stringResource(R.string.loud_sound_reduction_description),
+                    checked = state.loudSoundReductionEnabled,
+                    onCheckedChange = {
+                        viewModel.setATTCharacteristicValue(
+                            ATTHandles.LOUD_SOUND_REDUCTION,
+                            byteArrayOf(if (it) 1.toByte() else 0.toByte())
+                        )
+                    },
+                    enabled = state.isPremium
+                )
 
             Spacer(modifier = Modifier.height(12.dp))
         }

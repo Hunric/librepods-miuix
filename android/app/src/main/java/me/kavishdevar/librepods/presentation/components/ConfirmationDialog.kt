@@ -66,6 +66,8 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.TextButton as MiuixTextButton
+import top.yukonga.miuix.kmp.window.WindowDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalHazeMaterialsApi
@@ -80,13 +82,36 @@ fun ConfirmationDialog(
     onDismiss: () -> Unit = { showDialog.value = false },
     backdrop: LayerBackdrop,
 ) {
+    if (LocalDesignSystem.current == DesignSystem.Miuix) {
+        WindowDialog(
+            show = showDialog.value,
+            title = title,
+            summary = message,
+            onDismissRequest = onDismiss,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MiuixTextButton(text = dismissText, onClick = onDismiss)
+                MiuixTextButton(
+                    text = confirmText,
+                    onClick = onConfirm,
+                    colors = top.yukonga.miuix.kmp.basic.ButtonDefaults.textButtonColorsPrimary(),
+                )
+            }
+        }
+        return
+    }
+
     AnimatedVisibility(
         visible = showDialog.value,
         enter = scaleIn(initialScale = 1.05f) + fadeIn(),
         exit = scaleOut(targetScale = 1.05f) + fadeOut()
     ) {
         when (LocalDesignSystem.current) {
-            DesignSystem.Material -> {
+            DesignSystem.Miuix -> {
                 BasicAlertDialog(
                     onDismissRequest = onDismiss,
                     properties = DialogProperties(

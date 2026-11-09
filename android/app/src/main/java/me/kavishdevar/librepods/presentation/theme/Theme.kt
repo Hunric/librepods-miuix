@@ -18,71 +18,98 @@
 
 package me.kavishdevar.librepods.presentation.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import top.yukonga.miuix.kmp.theme.Colors as MiuixColors
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.ThemeController
 
 val ColorScheme.sectionHeader: Color
     get() = onBackground.copy(alpha = 0.6f)
 
-private val AppleDarkColorScheme = darkColorScheme(
-    surfaceContainer = Color(0xFF000000), // for some reason background is not used as the background in gmail and settings app, but surfacecontainer, so using that
-    onBackground = Color(0xFFFFFFFF),
-    surface = Color(0xFF1C1C1E),
-    onSurface = Color(0xFFFFFFFF),
-    surfaceDim = Color(0x40888888),
-    primary = Color(0xFF0091FF),
-    secondaryContainer = Color(0xFF366AA8),
-    onSecondaryContainer = Color(0xFF0091FF),
-    onPrimary = Color(0xFFFFFFFF)
-)
-
-private val AppleLightColorScheme = lightColorScheme(
-    surfaceContainer = Color(0xFFF2F2F7),
-    onBackground = Color(0xFF000000),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF000000),
-    surfaceDim = Color(0x40D9D9D9),
-    secondaryContainer = Color(0xFF6BC0FF),
-    onSecondaryContainer = Color(0xFF0088FF),
-    primary = Color(0xFF0088FF),
-    onPrimary = Color(0xFFFFFFFF)
+private val MiuixMaterialShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable
 fun LibrePodsTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    m3eEnabled: Boolean = false,
-    content: @Composable () -> Unit
+    darkTheme: Boolean = false,
+    @Suppress("UNUSED_PARAMETER") m3eEnabled: Boolean = false,
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        m3eEnabled -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> AppleDarkColorScheme
-        else -> AppleLightColorScheme
-    }
-
-    CompositionLocalProvider(
-        LocalDesignSystem provides
-            if (m3eEnabled) DesignSystem.Material
-            else DesignSystem.Apple
-    ) {
-        MaterialExpressiveTheme(
-            colorScheme = colorScheme,
-            motionScheme = MotionScheme.expressive(),
-            typography = if (m3eEnabled) MaterialTypography else AppleTypography,
-            content = content
+    val controller = remember(darkTheme) {
+        ThemeController(
+            colorSchemeMode = if (darkTheme) ColorSchemeMode.Dark else ColorSchemeMode.Light,
         )
     }
+
+    CompositionLocalProvider(LocalDesignSystem provides DesignSystem.Miuix) {
+        MiuixTheme(controller = controller) {
+            val miuixColors = MiuixTheme.colorScheme
+            MaterialExpressiveTheme(
+                colorScheme = miuixColors.toMaterial3ColorScheme(darkTheme),
+                motionScheme = MotionScheme.standard(),
+                typography = materialTypographyFromMiuix(MiuixTheme.textStyles),
+                shapes = MiuixMaterialShapes,
+                content = content,
+            )
+        }
+    }
+}
+
+private fun MiuixColors.toMaterial3ColorScheme(darkTheme: Boolean): ColorScheme {
+    val baseScheme = if (darkTheme) darkColorScheme() else lightColorScheme()
+    return baseScheme.copy(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = onPrimaryContainer,
+        inversePrimary = primaryVariant,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = onSecondaryContainer,
+        tertiary = tertiaryContainerVariant,
+        onTertiary = onTertiaryContainer,
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = onTertiaryContainer,
+        error = error,
+        onError = onError,
+        errorContainer = errorContainer,
+        onErrorContainer = onErrorContainer,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariantSummary,
+        inverseSurface = onSurfaceContainer,
+        inverseOnSurface = surface,
+        outline = outline,
+        outlineVariant = dividerLine,
+        scrim = windowDimming,
+        surfaceTint = primary,
+        surfaceBright = surface,
+        surfaceDim = surfaceVariant,
+        surfaceContainerLowest = surface,
+        surfaceContainerLow = surfaceContainer,
+        surfaceContainer = surfaceContainer,
+        surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
+    )
 }

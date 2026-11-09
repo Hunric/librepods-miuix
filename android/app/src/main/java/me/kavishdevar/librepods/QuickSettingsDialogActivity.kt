@@ -28,6 +28,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -81,6 +83,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -304,23 +307,48 @@ fun NewControlCenterDialogContent(
     onNoiseControlExpandedChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val textColor = Color.White
 
-    var currentAncMode by remember { mutableStateOf(NoiseControlMode.TRANSPARENCY) }
-    var isConvAwarenessEnabled by remember { mutableStateOf(false) }
-
-    val isOffModeEnabled = remember { sharedPreferences.getBoolean("off_listening_mode", true) }
-    val availableModes = remember(isOffModeEnabled) {
-        mutableListOf(
-            NoiseControlMode.TRANSPARENCY,
-            NoiseControlMode.ADAPTIVE,
-            NoiseControlMode.NOISE_CANCELLATION
-        ).apply {
-            if (isOffModeEnabled) {
-                add(0, NoiseControlMode.OFF)
-            }
+    var deviceName by remember(service) { mutableStateOf(service?.getCurrentDeviceName() ?: "AirPods") }
+    var controlsToken by remember(service) { mutableStateOf<Long?>(null) }
+    var currentAncMode by remember(service) { mutableStateOf<NoiseControlMode?>(null) }
+    var isConvAwarenessEnabled by remember(service) { mutableStateOf<Boolean?>(null) }
+    var isOffModeEnabled by remember(service) { mutableStateOf<Boolean?>(null) }
+    var supportsAdaptive by remember(service) { mutableStateOf(false) }
+    val availableModes = remember(isOffModeEnabled, currentAncMode, supportsAdaptive) {
+        buildList {
+            if (isOffModeEnabled == true || currentAncMode == NoiseControlMode.OFF) add(NoiseControlMode.OFF)
+            add(NoiseControlMode.TRANSPARENCY)
+            if (supportsAdaptive) add(NoiseControlMode.ADAPTIVE)
+            add(NoiseControlMode.NOISE_CANCELLATION)
         }
+    }
+    val refreshControls = refresh@{
+        val boundService = service
+        if (boundService == null) {
+            controlsToken = null
+            return@refresh
+        }
+        // Name, selections and capability must all belong to the same connection.
+        boundService.withControlConnectionToken { token ->
+            val values = if (token != null) boundService.getLocalDesiredControlValues() else emptyMap()
+            controlsToken = token
+            supportsAdaptive = token != null && boundService.supportsAdaptiveAudioForCurrentSession()
+            deviceName = boundService.getCurrentDeviceName()
+            currentAncMode = values[AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE]
+                ?.firstOrNull()?.toInt()?.let { NoiseControlMode.entries.getOrNull(it - 1) }
+            fun booleanValue(id: AACPManager.Companion.ControlCommandIdentifiers): Boolean? =
+                when (values[id]?.firstOrNull()?.toInt()) { 1 -> true; 2 -> false; else -> null }
+            isConvAwarenessEnabled = booleanValue(AACPManager.Companion.ControlCommandIdentifiers.CONVERSATION_DETECT_CONFIG)
+            isOffModeEnabled = booleanValue(AACPManager.Companion.ControlCommandIdentifiers.ALLOW_OFF_OPTION)
+        }
+    }
+    val updateControl: (AACPManager.Companion.ControlCommandIdentifiers, ByteArray) -> Unit = update@{ id, value ->
+        val token = controlsToken ?: return@update
+        if (id == AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE &&
+            value.firstOrNull()?.toInt() == 4 && !supportsAdaptive) return@update
+        service?.setUserControlValue(id, value, token)
+        refreshControls()
     }
 
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -342,41 +370,39 @@ fun NewControlCenterDialogContent(
         }
     }
 
-    DisposableEffect(service, availableModes) {
-        val ancReceiver = object : BroadcastReceiver() {
+    DisposableEffect(service) {
+        val handler = Handler(Looper.getMainLooper())
+        var active = true
+        val refresh = { handler.post { if (active) refreshControls() }; Unit }
+        val listener = object : AACPManager.ControlCommandListener {
+            override fun onControlCommandReceived(controlCommand: AACPManager.ControlCommand) = refresh()
+        }
+        val identifiers = listOf(
+            AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE,
+            AACPManager.Companion.ControlCommandIdentifiers.ALLOW_OFF_OPTION,
+            AACPManager.Companion.ControlCommandIdentifiers.CONVERSATION_DETECT_CONFIG
+        )
+        identifiers.forEach { service?.aacpManager?.registerControlCommandListener(it, listener) }
+        val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action == AirPodsNotifications.ANC_DATA && service != null) {
-                    val newModeOrdinal = intent.getIntExtra("data", NoiseControlMode.TRANSPARENCY.ordinal + 1) - 1
-                    val newMode = NoiseControlMode.entries.getOrElse(newModeOrdinal) { NoiseControlMode.TRANSPARENCY }
-                    if (availableModes.contains(newMode)) {
-                         currentAncMode = newMode
-                    } else if (newMode == NoiseControlMode.OFF && !isOffModeEnabled) {
-                        currentAncMode = NoiseControlMode.TRANSPARENCY
-                    }
-                    Log.d("QSActivity", "ANC Receiver updated mode to: $currentAncMode (available: ${availableModes.joinToString()})")
-                }
+                // A late disconnect from an old session must not erase a newer one.
+                refreshControls()
             }
         }
-        val filter = IntentFilter(AirPodsNotifications.ANC_DATA)
+        val filter = IntentFilter().apply {
+            addAction(AirPodsNotifications.ANC_DATA)
+            addAction(AirPodsNotifications.AIRPODS_DISCONNECTED)
+            addAction("me.kavishdevar.librepods.CONTROL_SETTINGS_READY")
+            addAction(AirPodsNotifications.AIRPODS_INFORMATION_UPDATED)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(ancReceiver, filter, Context.RECEIVER_EXPORTED)
-        } else {
-            context.registerReceiver(ancReceiver, filter)
-        }
-
-        service?.let {
-            val initialModeOrdinal = it.getANC().minus(1)
-            var initialMode = NoiseControlMode.entries.getOrElse(initialModeOrdinal) { NoiseControlMode.TRANSPARENCY }
-            if (!availableModes.contains(initialMode)) {
-                initialMode = NoiseControlMode.TRANSPARENCY
-            }
-            currentAncMode = initialMode
-            isConvAwarenessEnabled = sharedPreferences.getBoolean("conversation_awareness", true)
-            Log.d("QSActivity", "Initial ANC: $currentAncMode, ConvAware: $isConvAwarenessEnabled")
-        }
-
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else context.registerReceiver(receiver, filter)
+        refreshControls()
         onDispose {
-            context.unregisterReceiver(ancReceiver)
+            active = false
+            identifiers.forEach { service?.aacpManager?.unregisterControlCommandListener(it, listener) }
+            context.unregisterReceiver(receiver)
         }
     }
 
@@ -399,8 +425,6 @@ fun NewControlCenterDialogContent(
         }
     }
 
-    val deviceName = remember { sharedPreferences.getString("name", "AirPods") ?: "AirPods" }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -416,7 +440,7 @@ fun NewControlCenterDialogContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        if (service != null) {
+        if (service != null && controlsToken != null) {
             Spacer(modifier = Modifier.weight(1f))
 
             Column(
@@ -489,19 +513,32 @@ fun NewControlCenterDialogContent(
                     animationSpec = tween(durationMillis = 300),
                     label = "NoiseControlCrossfade"
                 ) { expanded ->
-                    if (expanded) {
+                    if (expanded && currentAncMode?.let { it in availableModes } == true) {
                         ControlCenterNoiseControlSegmentedButton(
                             availableModes = availableModes,
-                            selectedMode = currentAncMode,
+                            selectedMode = currentAncMode!!,
                             onModeSelected = { newMode ->
-                                service.aacpManager.sendControlCommand(
-                                    identifier = AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE.value,
-                                    value = newMode.ordinal + 1
+                                updateControl(
+                                    AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE,
+                                    byteArrayOf((newMode.ordinal + 1).toByte())
                                 )
-                                currentAncMode = newMode
                             },
                             modifier = Modifier.fillMaxWidth(0.8f)
                         )
+                    } else if (expanded) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            availableModes.forEach { mode ->
+                                Text(
+                                    text = getModeLabel(mode), color = textColor,
+                                    modifier = Modifier.clickable {
+                                        updateControl(
+                                            AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE,
+                                            byteArrayOf((mode.ordinal + 1).toByte())
+                                        )
+                                    }
+                                )
+                            }
+                        }
                     } else {
                         Row(
                             modifier = Modifier.fillMaxWidth(0.85f),
@@ -567,19 +604,18 @@ fun NewControlCenterDialogContent(
                                         .background(
                                             Brush.linearGradient(
                                                 colors = listOf(
-                                                    if (isConvAwarenessEnabled) Color(0xFF0A84FF) else Color(0x593C3C3E),
-                                                    if (isConvAwarenessEnabled) Color(0xFF0A84FF) else Color(0x593C3C3E)
+                                                    if (isConvAwarenessEnabled == true) Color(0xFF0A84FF) else Color(0x593C3C3E),
+                                                    if (isConvAwarenessEnabled == true) Color(0xFF0A84FF) else Color(0x593C3C3E)
                                                 )
                                             )
                                         )
                                         .clickable(
                                             onClick = {
-                                                val newState = !isConvAwarenessEnabled
-                                                service.aacpManager.sendControlCommand(
-                                                    identifier = AACPManager.Companion.ControlCommandIdentifiers.CONVERSATION_DETECT_CONFIG.value,
-                                                    value = newState
+                                                val newState = isConvAwarenessEnabled != true
+                                                updateControl(
+                                                    AACPManager.Companion.ControlCommandIdentifiers.CONVERSATION_DETECT_CONFIG,
+                                                    byteArrayOf(if (newState) 1 else 2)
                                                 )
-                                                isConvAwarenessEnabled = newState
                                             },
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() }
@@ -613,27 +649,29 @@ fun NewControlCenterDialogContent(
         } else {
             Spacer(modifier = Modifier.weight(1f))
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("Loading...", color = textColor)
+                Text(stringResource(R.string.airpods_not_connected), color = textColor)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
 
-private fun getModeIconRes(mode: NoiseControlMode): Int {
+private fun getModeIconRes(mode: NoiseControlMode?): Int {
     return when (mode) {
         NoiseControlMode.OFF -> R.drawable.noise_cancellation
         NoiseControlMode.TRANSPARENCY -> R.drawable.transparency
         NoiseControlMode.ADAPTIVE -> R.drawable.adaptive
         NoiseControlMode.NOISE_CANCELLATION -> R.drawable.noise_cancellation
+        null -> R.drawable.airpods
     }
 }
 
-private fun getModeLabel(mode: NoiseControlMode): String {
+private fun getModeLabel(mode: NoiseControlMode?): String {
     return when (mode) {
         NoiseControlMode.OFF -> "Off"
         NoiseControlMode.TRANSPARENCY -> "Transparency"
         NoiseControlMode.ADAPTIVE -> "Adaptive"
         NoiseControlMode.NOISE_CANCELLATION -> "Noise Cancel"
+        null -> ""
     }
 }

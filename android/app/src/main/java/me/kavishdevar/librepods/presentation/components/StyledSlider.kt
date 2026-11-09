@@ -68,6 +68,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
@@ -98,7 +99,11 @@ import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
+import top.yukonga.miuix.kmp.preference.SliderPreference
 import me.kavishdevar.librepods.utils.inspectDragGestures
+import java.text.NumberFormat
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -231,135 +236,60 @@ fun StyledSlider(
     description: String? = null,
     enabled: Boolean = true,
     index: Int = 0,
-    count: Int = 1
+    count: Int = 1,
+    steps: Int = 0,
+    onValueChangeFinished: (() -> Unit)? = null,
+    valueText: String? = null,
+    showValue: Boolean = true,
 ) {
     when (LocalDesignSystem.current) {
-        DesignSystem.Material -> {
-            val defaultShape = when {
-                count == 1 -> RoundedCornerShape(24.dp)
-
-                index == 0 -> RoundedCornerShape(
-                    topStart = 24.dp,
-                    topEnd = 24.dp,
-                    bottomStart = 8.dp,
-                    bottomEnd = 8.dp
-                )
-
-                index == count - 1 -> RoundedCornerShape(
-                    topStart = 8.dp,
-                    topEnd = 8.dp,
-                    bottomStart = 24.dp,
-                    bottomEnd = 24.dp
-                )
-
-                else -> RoundedCornerShape(8.dp)
-            }
-
-            Column {
-                label?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelSmallEmphasized,
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .padding(top = 4.dp, bottom = 12.dp)
-                    )
+        DesignSystem.Miuix -> {
+            val sliderSnapPoints = snapPoints.filter { it in valueRange }
+            val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+            val formatter = remember(locale) {
+                NumberFormat.getNumberInstance(locale).apply {
+                    maximumFractionDigits = 2
                 }
-                SegmentedListItem(
-                    shapes = ListItemDefaults.shapes().copy(
-                        shape = defaultShape,
-                        pressedShape = RoundedCornerShape(24.dp),
-                        selectedShape = RoundedCornerShape(24.dp),
-                        hoveredShape = RoundedCornerShape(24.dp),
-                    ),
-                    onClick = {},
-                    enabled = enabled,
-                    modifier = Modifier.heightIn(min = 58.dp),
-                    content = {
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            description?.let {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-
-                            if (startLabel != null || endLabel != null) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    startLabel?.let {
-                                        Text(
-                                            text = it,
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-
-                                    Spacer(Modifier.weight(1f))
-
-                                    endLabel?.let {
-                                        Text(
-                                            text = it,
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    supportingContent = {
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-
-                                startIcon?.let {
-                                    Text(it, fontFamily = FontFamily(Font(R.font.sf_pro)))
-                                    Spacer(Modifier.width(12.dp))
-                                }
-
-                                Slider(
-                                    modifier = Modifier.weight(1f),
-                                    value = value,
-                                    onValueChange = { newValue ->
-                                        val snapped =
-                                            if (snapPoints.isNotEmpty()) {
-                                                snapIfClose(
-                                                    newValue,
-                                                    snapPoints,
-                                                    snapThreshold
-                                                )
-                                            } else {
-                                                newValue
-                                            }
-
-                                        onValueChange(snapped)
-                                    },
-                                    valueRange = valueRange,
-                                    enabled = enabled
-                                )
-
-                                endIcon?.let {
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(it, fontFamily = FontFamily(Font(R.font.sf_pro)))
-                                }
-                            }
+            }
+            val displayedValue = remember(value, valueText, formatter) {
+                valueText ?: formatter.format(value)
+            }
+            SliderPreference(
+                value = value,
+                onValueChange = { newValue ->
+                    onValueChange(
+                        if (sliderSnapPoints.isNotEmpty()) snapIfClose(newValue, sliderSnapPoints, snapThreshold)
+                        else newValue
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                title = label,
+                summary = description,
+                valueText = displayedValue.takeIf { showValue },
+                startAction = startIcon?.let {
+                    { MiuixText(text = it, fontFamily = FontFamily(Font(R.font.sf_pro))) }
+                },
+                endActions = endIcon?.let {
+                    { MiuixText(text = it, fontFamily = FontFamily(Font(R.font.sf_pro))) }
+                },
+                bottomAction = if (startLabel != null || endLabel != null) {
+                    {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            startLabel?.let { MiuixText(text = it) }
+                            Spacer(Modifier.weight(1f))
+                            endLabel?.let { MiuixText(text = it) }
                         }
                     }
-                )
-
-                if (index + 1 != count) {
-                    Spacer(
-                        modifier = Modifier.height(2.dp)
-                    )
-                }
-            }
+                } else null,
+                enabled = enabled,
+                valueRange = valueRange,
+                steps = steps,
+                onValueChangeFinished = onValueChangeFinished,
+                showKeyPoints = sliderSnapPoints.isNotEmpty(),
+                keyPoints = sliderSnapPoints.takeIf { it.isNotEmpty() },
+                magnetThreshold = (snapThreshold / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f),
+            )
         }
-
         DesignSystem.Apple -> {
             val backgroundColor =
                 if (isSystemInDarkTheme()) Color(0xFF1C1C1E) else Color(0xFFFFFFFF)
@@ -765,9 +695,7 @@ private fun snapIfClose(value: Float, points: List<Float>, threshold: Float = 0.
 @Composable
 fun StyledSliderPreview() {
     val a = remember { mutableFloatStateOf(0.5f) }
-    LibrePodsTheme(
-        m3eEnabled = true
-    ) {
+    LibrePodsTheme(darkTheme = true) {
         StyledScaffold(
             title = "test",
         ) {

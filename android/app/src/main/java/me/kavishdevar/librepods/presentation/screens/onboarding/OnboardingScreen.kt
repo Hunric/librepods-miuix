@@ -19,15 +19,12 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -42,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
+import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import me.kavishdevar.librepods.utils.XposedState
 import me.kavishdevar.librepods.utils.bypassDeviceCheck
 import me.kavishdevar.librepods.utils.isSupported
@@ -80,9 +79,7 @@ fun OnboardingScreen(
         }
     }
 
-    LibrePodsTheme(
-        m3eEnabled = true
-    ) {
+    LibrePodsTheme() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -152,25 +149,19 @@ fun OnboardingScreen(
                                             textAlign = TextAlign.Center
                                         )
                                         Spacer(modifier = Modifier.height(64.dp))
-                                        FilledTonalIconButton(
+                                        MiuixIconButton(
                                             onClick = {
                                                 animationScope.launch {
                                                     state.animateScrollToItem(1)
                                                 }
                                             },
-                                            modifier = Modifier
-                                                .minimumInteractiveComponentSize()
-                                                .size(
-                                                    IconButtonDefaults.largeContainerSize(
-                                                        IconButtonDefaults.IconButtonWidthOption.Wide
-                                                    )
-                                                ),
-                                            shape = IconButtonDefaults.largeRoundShape
+                                            modifier = Modifier.size(56.dp),
+                                            backgroundColor = MiuixTheme.colorScheme.secondaryVariant
                                         ) {
                                             Icon(
                                                 Icons.AutoMirrored.Default.ArrowForward,
                                                 contentDescription = "forward",
-                                                modifier = Modifier.size(IconButtonDefaults.largeIconSize),
+                                                modifier = Modifier.size(24.dp),
                                             )
                                         }
                                     }

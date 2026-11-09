@@ -52,6 +52,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
@@ -60,7 +61,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -87,8 +89,9 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.highlight.Highlight
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.components.StyledButton
 import me.kavishdevar.librepods.presentation.components.StyledList
@@ -101,15 +104,15 @@ import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 import me.kavishdevar.librepods.presentation.viewmodel.demoState
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun EqualizerRoute(viewModel: AirPodsViewModel) {
     val state by viewModel.uiState.collectAsState()
+    val sessionToken = state.nameConnectionToken
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
-    val topPadding = if (m3eEnabled) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
-    val bottomPadding = if (m3eEnabled) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
+    val isMiuix = LocalDesignSystem.current == DesignSystem.Miuix
+    val topPadding = if (isMiuix) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
+    val bottomPadding = if (isMiuix) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
 
     Box (
         modifier = Modifier
@@ -120,13 +123,18 @@ fun EqualizerRoute(viewModel: AirPodsViewModel) {
             state = state,
             topPadding = topPadding,
             bottomPadding = bottomPadding,
-            setCustomEqEnabled = viewModel::setCustomEqEnabled,
-            setCustomEq = viewModel::setCustomEq
+            setCustomEqEnabled = { enabled ->
+                if (viewModel.uiState.value.controlServiceGeneration == state.controlServiceGeneration)
+                    viewModel.setCustomEqEnabled(enabled, sessionToken)
+            },
+            setCustomEq = { low, mid, high ->
+                if (viewModel.uiState.value.controlServiceGeneration == state.controlServiceGeneration)
+                    viewModel.setCustomEq(low, mid, high, sessionToken)
+            }
         )
     }
 }
 
-@OptIn(FlowPreview::class)
 @Composable
 fun EqualizerScreen(
     state: AirPodsUiState,
@@ -148,33 +156,43 @@ fun EqualizerScreen(
         val height = 200.dp
         val maxOffset = with(LocalDensity.current) { height.toPx() } / 2
 
-        val offsets = remember(state.customEq) {
+        val offsets = remember(maxOffset, state.nameConnectionToken, state.controlServiceGeneration) {
             listOf(
-                mutableFloatStateOf(lerp(maxOffset, -maxOffset, customEq.low.toFloat() / 100)),
-                mutableFloatStateOf(lerp(maxOffset, -maxOffset, customEq.mid.toFloat() / 100)),
-                mutableFloatStateOf(lerp(maxOffset, -maxOffset, customEq.high.toFloat() / 100))
+                mutableFloatStateOf(lerp(maxOffset, -maxOffset, customEq.low.coerceIn(0, 100) / 100f)),
+                mutableFloatStateOf(lerp(maxOffset, -maxOffset, customEq.mid.coerceIn(0, 100) / 100f)),
+                mutableFloatStateOf(lerp(maxOffset, -maxOffset, customEq.high.coerceIn(0, 100) / 100f))
             )
         }
-
-        LaunchedEffect(offsets) {
-            snapshotFlow {
-                Triple(
-                    offsets[0].floatValue,
-                    offsets[1].floatValue,
-                    offsets[2].floatValue
-                )
+        var eqDragging by remember(state.nameConnectionToken, state.controlServiceGeneration) { mutableStateOf(false) }
+        var eqPending by remember(state.nameConnectionToken, state.controlServiceGeneration) { mutableStateOf(false) }
+        var eqJob by remember(state.nameConnectionToken, state.controlServiceGeneration) { mutableStateOf<Job?>(null) }
+        val eqScope = rememberCoroutineScope()
+        val eqToken = state.nameConnectionToken
+        val eqGeneration = state.controlServiceGeneration
+        fun flushEq() {
+            eqJob?.cancel()
+            eqJob = null
+            if (!eqPending || maxOffset <= 0f || !maxOffset.isFinite()) return
+            eqPending = false
+            val values = offsets.map { offset ->
+                (100 - ((offset.floatValue / (2 * maxOffset) + 0.5f) * 100).roundToInt()).coerceIn(0, 100)
             }
-                .debounce(100.milliseconds) // cool, should've been using this since the very beginning
-                .collect { (lowF, midF, highF) ->
-                    val low =
-                        100 - ((lowF / (2 * maxOffset) + 0.5f) * 100).roundToInt()
-                    val mid =
-                        100 - ((midF / (2 * maxOffset) + 0.5f) * 100).roundToInt()
-                    val high =
-                        100 - ((highF / (2 * maxOffset) + 0.5f) * 100).roundToInt()
-
-                    setCustomEq(low, mid, high)
+            setCustomEq(values[0], values[1], values[2])
+        }
+        DisposableEffect(eqToken, eqGeneration) { onDispose { flushEq() } }
+        LaunchedEffect(customEq.low, customEq.mid, customEq.high, maxOffset, eqDragging, eqPending, eqToken, eqGeneration) {
+            if (!eqDragging && !eqPending) {
+                listOf(customEq.low, customEq.mid, customEq.high).forEachIndexed { index, value ->
+                    offsets[index].floatValue = lerp(maxOffset, -maxOffset, value.coerceIn(0, 100) / 100f)
                 }
+            }
+        }
+
+        fun sendUserEqChange() {
+            if (maxOffset <= 0f || !maxOffset.isFinite()) return
+            eqPending = true
+            eqJob?.cancel()
+            eqJob = eqScope.launch { delay(150); flushEq() }
         }
 
         Spacer(modifier = Modifier.height(topPadding))
@@ -210,16 +228,24 @@ fun EqualizerScreen(
                 EqualizerCard(
                     lowOffset = offsets[0],
                     midOffset = offsets[1],
-                    highOffset = offsets[2]
+                    highOffset = offsets[2],
+                    onUserChange = ::sendUserEqChange,
+                    onDraggingChange = { dragging ->
+                        eqDragging = dragging
+                        if (!dragging) flushEq()
+                    }
                 )
 
-                val resetButtonEnabled = remember { derivedStateOf { !offsets.all { it.floatValue == 0f } } }
+                val resetButtonEnabled = remember(offsets) { derivedStateOf { !offsets.all { it.floatValue == 0f } } }
 
                 StyledButton(
                     onClick = {
+                        eqJob?.cancel()
+                        eqPending = false
                         offsets[0].floatValue = 0f
                         offsets[1].floatValue = 0f
                         offsets[2].floatValue = 0f
+                        setCustomEq(50, 50, 50)
                     },
                     backdrop = rememberLayerBackdrop(),
                     modifier = Modifier.fillMaxWidth(),
@@ -243,10 +269,16 @@ fun EqualizerScreen(
 fun EqualizerCard(
     lowOffset: MutableState<Float>,
     midOffset: MutableState<Float>,
-    highOffset: MutableState<Float>
+    highOffset: MutableState<Float>,
+    onUserChange: () -> Unit = {},
+    onDraggingChange: (Boolean) -> Unit = {}
 ) {
     val height = 200.dp
     val maxOffset = with(LocalDensity.current) { height.toPx() } / 2
+    val draggingBands = remember { mutableStateOf(setOf<Int>()) }
+    DisposableEffect(Unit) {
+        onDispose { onDraggingChange(false) }
+    }
 
     Column(
         modifier = Modifier
@@ -342,7 +374,7 @@ fun EqualizerCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 fun colorFromY(y: Float): Color {
-                    val f = ((y + maxOffset) / (2f * maxOffset)).coerceIn(0f, 1f)
+                    val f = if (maxOffset > 0f && maxOffset.isFinite()) ((y + maxOffset) / (2f * maxOffset)).coerceIn(0f, 1f) else 0.5f
                     val stops = listOf(
                         0.0f to Color(0xFFFFA300),
                         0.25f to Color(0xFFFCE600),
@@ -679,6 +711,7 @@ fun EqualizerCard(
                                         .draggable(
                                             orientation = Orientation.Vertical,
                                             state = rememberDraggableState { delta ->
+                                                if (maxOffset <= 0f || !maxOffset.isFinite() || !delta.isFinite() || delta == 0f) return@rememberDraggableState
                                                 when (i) {
                                                     0 -> {
                                                         lowOffset.value =
@@ -704,12 +737,17 @@ fun EqualizerCard(
                                                             )
                                                     }
                                                 }
+                                                onUserChange()
                                             },
                                             onDragStarted = {
                                                 pressed.value = true
+                                                draggingBands.value = draggingBands.value + i
+                                                onDraggingChange(true)
                                             },
                                             onDragStopped = {
                                                 pressed.value = false
+                                                draggingBands.value = draggingBands.value - i
+                                                onDraggingChange(draggingBands.value.isNotEmpty())
                                             }
                                         )
                                 )
@@ -722,12 +760,10 @@ fun EqualizerCard(
     }
 }
 
-@Preview(name = "Apple")
+@Preview(name = "Miuix")
 @Composable
-fun EqualizerScreenPreviewApple() {
-    LibrePodsTheme(
-        m3eEnabled = false
-    ) {
+fun EqualizerScreenPreviewMiuix() {
+    LibrePodsTheme() {
         Box (
             modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
         ) {
@@ -740,12 +776,10 @@ fun EqualizerScreenPreviewApple() {
     }
 }
 
-@Preview(name = "Material")
+@Preview(name = "Miuix sample")
 @Composable
-fun EqualizerScreenPreviewMaterial() {
-    LibrePodsTheme(
-        m3eEnabled = true
-    ) {
+fun EqualizerScreenPreviewMiuixSample() {
+    LibrePodsTheme() {
         val state = remember { mutableStateOf(demoState) }
         Box (
             modifier = Modifier

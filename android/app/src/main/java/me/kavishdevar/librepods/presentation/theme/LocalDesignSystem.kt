@@ -4,9 +4,9 @@ import androidx.compose.runtime.compositionLocalOf
 
 enum class DesignSystem {
     Apple,
-    Material
+    Miuix
 }
 
 val LocalDesignSystem = compositionLocalOf {
-    DesignSystem.Apple
+    DesignSystem.Miuix
 }

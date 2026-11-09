@@ -35,9 +35,9 @@ fun MicrophoneSettingsRoute(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
-    val topPadding = if (m3eEnabled) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
-    val bottomPadding = if (m3eEnabled) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
+    val isMiuix = LocalDesignSystem.current == DesignSystem.Miuix
+    val topPadding = if (isMiuix) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
+    val bottomPadding = if (isMiuix) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
 
     val id = AACPManager.Companion.ControlCommandIdentifiers.MIC_MODE
 
@@ -47,7 +47,7 @@ fun MicrophoneSettingsRoute(
             .background(MaterialTheme.colorScheme.surfaceContainer)
     ) {
         MicrophoneSettingsScreen(
-            selectedMode = state.controlStates[id]?.getOrNull(0)?.toInt() ?: 0,
+            selectedMode = state.controlStates[id]?.firstOrNull()?.toInt()?.takeIf { it in 0..2 } ?: 0,
             topPadding = topPadding,
             bottomPadding = bottomPadding,
             onMicrophoneSettingsChanged = {
@@ -59,7 +59,7 @@ fun MicrophoneSettingsRoute(
 
 @Composable
 fun MicrophoneSettingsScreen(
-    selectedMode: Int,
+    selectedMode: Int?,
     topPadding: Dp = 16.dp,
     bottomPadding: Dp = 16.dp,
     onMicrophoneSettingsChanged: (Int) -> Unit

@@ -2,9 +2,11 @@ package me.kavishdevar.librepods.presentation.navigation
 
 import androidx.activity.BackEventCompat.Companion.EDGE_LEFT
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -45,6 +47,12 @@ import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 import me.kavishdevar.librepods.presentation.viewmodel.AppSettingsViewModel
 import me.kavishdevar.librepods.presentation.viewmodel.PurchaseViewModel
 
+private const val NAV_FORWARD_DURATION_MS = 320
+private const val NAV_BACK_DURATION_MS = 280
+private const val NAV_EXIT_DURATION_MS = 180
+private val navEnterEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+private val navExitEasing = CubicBezierEasing(0.4f, 0f, 1f, 1f)
+
 @OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun AppNavGraph(
@@ -63,7 +71,7 @@ fun AppNavGraph(
         navigate(Screen.Purchase)
     }
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
+    val isMiuix = LocalDesignSystem.current == DesignSystem.Miuix
 
     SharedTransitionLayout {
         NavDisplay(
@@ -86,7 +94,6 @@ fun AppNavGraph(
                         }
                     Screen.AirPodsSettings ->
                         NavEntry(screen) {
-                            if (!airPodsViewModel.isReady) LoadingScreen()
                             AirPodsSettingsRoute(
                                 viewModel = airPodsViewModel,
                                 navigateToRename = { navigate(Screen.Rename) },
@@ -275,48 +282,126 @@ fun AppNavGraph(
                 }
             },
             transitionSpec = {
-                slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 4 }
+                (
+                    fadeIn(
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = navEnterEasing,
+                        ),
+                    ) + slideInHorizontally(
+                        animationSpec = tween(
+                            durationMillis = NAV_FORWARD_DURATION_MS,
+                            easing = navEnterEasing,
+                        ),
+                    ) { it } + scaleIn(
+                        animationSpec = tween(
+                            durationMillis = NAV_FORWARD_DURATION_MS,
+                            easing = navEnterEasing,
+                        ),
+                        initialScale = 0.985f,
+                    )
+                ) togetherWith (
+                    fadeOut(
+                        animationSpec = tween(
+                            durationMillis = NAV_EXIT_DURATION_MS,
+                            easing = navExitEasing,
+                        ),
+                    ) + slideOutHorizontally(
+                        animationSpec = tween(
+                            durationMillis = 240,
+                            easing = navExitEasing,
+                        ),
+                    ) { -it / 6 }
+                )
             },
             popTransitionSpec = {
-                slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
+                (
+                    fadeIn(
+                        animationSpec = tween(
+                            durationMillis = 220,
+                            easing = navEnterEasing,
+                        ),
+                    ) + slideInHorizontally(
+                        animationSpec = tween(
+                            durationMillis = NAV_BACK_DURATION_MS,
+                            easing = navEnterEasing,
+                        ),
+                    ) { -it / 5 } + scaleIn(
+                        animationSpec = tween(
+                            durationMillis = NAV_BACK_DURATION_MS,
+                            easing = navEnterEasing,
+                        ),
+                        initialScale = 0.985f,
+                    )
+                ) togetherWith (
+                    fadeOut(
+                        animationSpec = tween(
+                            durationMillis = NAV_EXIT_DURATION_MS,
+                            easing = navExitEasing,
+                        ),
+                    ) + slideOutHorizontally(
+                        animationSpec = tween(
+                            durationMillis = NAV_BACK_DURATION_MS,
+                            easing = navExitEasing,
+                        ),
+                    ) { it }
+                )
             },
             predictivePopTransitionSpec = { swipeEdge ->
-                if (m3eEnabled) {
+                if (isMiuix) {
                     val enterOffset: (Int) -> Int =
                         if (swipeEdge == EDGE_LEFT) {
-                            { -it / 6 }
+                            { -it / 7 }
                         } else {
-                            { it / 6 }
+                            { it / 7 }
                         }
 
                     val exitOffset: (Int) -> Int =
                         if (swipeEdge == EDGE_LEFT) {
-                            { it / 8 }
+                            { it / 9 }
                         } else {
-                            { -it / 8 }
+                            { -it / 9 }
                         }
 
                     fadeIn(
-                        animationSpec = tween(250)
+                        animationSpec = tween(240, easing = navEnterEasing)
                     ) +
                         slideInHorizontally(
                             initialOffsetX = enterOffset,
-                            animationSpec = tween(250)
+                            animationSpec = tween(240, easing = navEnterEasing)
+                        ) +
+                        scaleIn(
+                            animationSpec = tween(240, easing = navEnterEasing),
+                            initialScale = 0.985f,
                         ) togetherWith
                         fadeOut(
-                            targetAlpha = 0.75f,
-                            animationSpec = tween(250)
+                            targetAlpha = 0.9f,
+                            animationSpec = tween(220, easing = navExitEasing)
                         ) +
                         scaleOut(
-                            targetScale = 0.85f,
-                            animationSpec = tween(250)
+                            targetScale = 0.96f,
+                            animationSpec = tween(220, easing = navExitEasing)
                         ) +
                         slideOutHorizontally(
                             targetOffsetX = exitOffset,
-                            animationSpec = tween(250)
+                            animationSpec = tween(220, easing = navExitEasing)
                         )
                 } else {
-                    slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
+                    (
+                        fadeIn(tween(220, easing = navEnterEasing)) +
+                            slideInHorizontally(
+                                animationSpec = tween(NAV_BACK_DURATION_MS, easing = navEnterEasing)
+                            ) { -it / 5 } +
+                            scaleIn(
+                                animationSpec = tween(NAV_BACK_DURATION_MS, easing = navEnterEasing),
+                                initialScale = 0.985f,
+                            )
+                    ) togetherWith (
+                        fadeOut(tween(NAV_EXIT_DURATION_MS, easing = navExitEasing)) +
+                            slideOutHorizontally(
+                                animationSpec = tween(NAV_BACK_DURATION_MS, easing = navExitEasing)
+                            ) { it }
+                    )
                 }
             },
         )

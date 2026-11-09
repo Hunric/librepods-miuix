@@ -23,7 +23,6 @@ package me.kavishdevar.librepods.presentation.components
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,7 +38,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
@@ -51,6 +49,8 @@ import me.kavishdevar.librepods.data.BatteryComponent
 import me.kavishdevar.librepods.data.BatteryStatus
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import kotlin.io.encoding.ExperimentalEncodingApi
+import top.yukonga.miuix.kmp.basic.Card as MiuixCard
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun BatteryView(
@@ -72,13 +72,19 @@ fun BatteryView(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier
-                .widthIn(max = 350.dp)
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+        MiuixCard(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 350.dp)
+                    .height(IntrinsicSize.Min)
+                    .align(Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -170,6 +176,7 @@ fun BatteryView(
                     }
                 }
             }
+            }
         }
     }
 }
@@ -183,8 +190,8 @@ fun BatteryViewPreview() {
         Battery(BatteryComponent.CASE, 60, BatteryStatus.NOT_CHARGING)
     )
 
-    val bg = if (isSystemInDarkTheme()) Color.Black else Color(0xFFF2F2F7)
-    LibrePodsTheme(m3eEnabled = false) {
+    LibrePodsTheme(darkTheme = true) {
+        val bg = MiuixTheme.colorScheme.background
         Box(
             modifier = Modifier
                 .background(bg)

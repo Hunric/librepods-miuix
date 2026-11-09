@@ -20,7 +20,6 @@
 
 package me.kavishdevar.librepods.presentation.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -58,7 +57,6 @@ import me.kavishdevar.librepods.presentation.components.StyledListItem
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
-import kotlin.experimental.and
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @ExperimentalHazeMaterialsApi
@@ -67,19 +65,15 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 fun LongPress(viewModel: AirPodsViewModel, name: String, navigateToPurchase: () -> Unit) {
     val state by viewModel.uiState.collectAsState()
 
-    val modesByte = state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE_CONFIGS]?.get(0) ?: 0
-
-    Log.d("PressAndHoldSettingsScreen", "Current modes state: ${modesByte.toString(2)}")
-    Log.d("PressAndHoldSettingsScreen", "Off mode: ${(modesByte and 0x01) != 0.toByte()}")
-    Log.d("PressAndHoldSettingsScreen", "Transparency mode: ${(modesByte and 0x04) != 0.toByte()}")
-    Log.d("PressAndHoldSettingsScreen", "Noise Cancellation mode: ${(modesByte and 0x02) != 0.toByte()}")
-    Log.d("PressAndHoldSettingsScreen", "Adaptive mode: ${(modesByte and 0x08) != 0.toByte()}")
+    val currentByte = state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE_CONFIGS]
+        ?.firstOrNull()?.toInt()?.and(0xFF)
+        ?.takeIf { (it and 0xF0) == 0 && Integer.bitCount(it) >= 2 } ?: 0x0E
 
     val longPressAction = if (name.lowercase() == "left") state.leftAction else state.rightAction
 
-    val m3eEnabled = LocalDesignSystem.current == DesignSystem.Material
-    val topPadding = if (m3eEnabled) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
-    val bottomPadding = if (m3eEnabled) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
+    val isMiuix = LocalDesignSystem.current == DesignSystem.Miuix
+    val topPadding = if (isMiuix) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 84.dp
+    val bottomPadding = if (isMiuix) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
 
     val scrollState = rememberScrollState()
 
@@ -139,8 +133,6 @@ fun LongPress(viewModel: AirPodsViewModel, name: String, navigateToPurchase: () 
         if (longPressAction == StemAction.CYCLE_NOISE_CONTROL_MODES) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            val currentByte = state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE_CONFIGS]?.get(0)?.toInt() ?: 0
-
             StyledList(
                 title = stringResource(R.string.listening_mode),
                 description = stringResource(R.string.press_and_hold_listening_mode_description)
@@ -150,6 +142,7 @@ fun LongPress(viewModel: AirPodsViewModel, name: String, navigateToPurchase: () 
                         name = stringResource(R.string.off),
                         description = stringResource(R.string.listening_mode_off_description),
                         selected = (currentByte and 0x01) != 0,
+                        enabled = true,
                         onClick = {
                             viewModel.toggleListeningMode(0x01)
                         },
@@ -171,6 +164,7 @@ fun LongPress(viewModel: AirPodsViewModel, name: String, navigateToPurchase: () 
                     name = stringResource(R.string.transparency),
                     description = stringResource(R.string.listening_mode_transparency_description),
                     selected = (currentByte and 0x04) != 0,
+                    enabled = true,
                     onClick = {
                         viewModel.toggleListeningMode(0x04)
                     },
@@ -187,30 +181,35 @@ fun LongPress(viewModel: AirPodsViewModel, name: String, navigateToPurchase: () 
                     }
                 )
 
-                StyledListItem(
-                    name = stringResource(R.string.adaptive),
-                    description = stringResource(R.string.listening_mode_adaptive_description),
-                    selected = (currentByte and 0x08) != 0,
-                    onClick = {
-                        viewModel.toggleListeningMode(0x08)
-                    },
-                    orientation = ListItemOrientation.Vertical,
-                    leadingContent = {
-                        Icon(
-                            painter = painterResource(R.drawable.adaptive),
-                            contentDescription = "Icon",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .height(42.dp)
-                                .wrapContentWidth()
-                        )
-                    }
-                )
+                if (state.supportsAdaptiveAudio) {
+                    StyledListItem(
+                        name = stringResource(R.string.adaptive),
+                        description = stringResource(R.string.listening_mode_adaptive_description),
+                        selected = (currentByte and 0x08) != 0,
+                        enabled = true,
+                        onClick = {
+                            viewModel.toggleListeningMode(0x08)
+                        },
+                        orientation = ListItemOrientation.Vertical,
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.adaptive),
+                                contentDescription = "Icon",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .height(42.dp)
+                                    .wrapContentWidth()
+                            )
+                        }
+                    )
+
+                }
 
                 StyledListItem(
                     name = stringResource(R.string.noise_cancellation),
                     description = stringResource(R.string.listening_mode_noise_cancellation_description),
                     selected = (currentByte and 0x02) != 0,
+                    enabled = true,
                     onClick = {
                         viewModel.toggleListeningMode(0x02)
                     },

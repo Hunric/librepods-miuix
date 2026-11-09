@@ -26,6 +26,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.view.View
 import android.widget.RemoteViews
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.bluetooth.AACPManager
@@ -73,14 +74,19 @@ class NoiseControlWidget : AppWidgetProvider() {
             R.id.widget_anc_button,
             PendingIntent.getBroadcast(context, 3, ancIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         )
-        ServiceManager.getService()?.updateNoiseControlWidget()
+        val service = ServiceManager.getService()
+        val supportsAdaptive = service?.supportsAdaptiveAudioForCurrentSession() == true
+        views.setViewVisibility(R.id.widget_adaptive_button, if (supportsAdaptive) View.VISIBLE else View.GONE)
         appWidgetManager.updateAppWidget(appWidgetIds, views)
+        // Service applies local selection colors as a partial update after click handlers exist.
+        service?.updateNoiseControlWidget()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == "ACTION_SET_ANC_MODE") {
-            val mode = intent.getIntExtra("ANC_MODE", 1)
+            val mode = intent.getIntExtra("ANC_MODE", -1)
+            if (mode !in 1..4) return
             Log.d("NoiseControlWidget", "Setting ANC mode to $mode")
             val service = ServiceManager.getService()
 
@@ -89,11 +95,12 @@ class NoiseControlWidget : AppWidgetProvider() {
                 return
             }
 
-             service.aacpManager
-                .sendControlCommand(
-                    AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE.value,
-                    mode.toByte()
-                )
+            val token = service.getNameConnectionToken() ?: return
+            if (mode == 4 && !service.supportsAdaptiveAudioForCurrentSession()) return
+            service.setUserControlValue(
+                AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE,
+                byteArrayOf(mode.toByte()), token
+            )
         }
     }
 }

@@ -33,13 +33,13 @@ fun AudioSettings(
     adaptiveAudioCapability: Boolean,
     customEqCapability: Boolean,
 
-    adaptiveVolumeChecked: Boolean,
+    adaptiveVolumeChecked: Boolean?,
     onAdaptiveVolumeCheckedChange: (Boolean) -> Unit,
 
-    conversationAwarenessChecked: Boolean,
+    conversationAwarenessChecked: Boolean?,
     onConversationAwarenessCheckedChange: (Boolean) -> Unit,
 
-    loudSoundReductionChecked: Boolean,
+    loudSoundReductionChecked: Boolean?,
     onLoudSoundReductionCheckedChange: (Boolean) -> Unit,
 
     navigateToAdaptiveStrength: () -> Unit,
@@ -54,7 +54,7 @@ fun AudioSettings(
                 StyledToggle(
                     label = stringResource(R.string.personalized_volume),
                     description = stringResource(R.string.personalized_volume_description),
-                    checked = adaptiveVolumeChecked,
+                    checked = adaptiveVolumeChecked ?: false,
                     onCheckedChange = onAdaptiveVolumeCheckedChange,
                     enabled = isPremium,
                 )
@@ -64,7 +64,7 @@ fun AudioSettings(
                 StyledToggle(
                     label = stringResource(R.string.conversation_awareness),
                     description = stringResource(R.string.conversation_awareness_description),
-                    checked = conversationAwarenessChecked,
+                    checked = conversationAwarenessChecked ?: false,
                     onCheckedChange = onConversationAwarenessCheckedChange,
                     enabled = isPremium,
                 )
@@ -74,7 +74,7 @@ fun AudioSettings(
                 StyledToggle(
                     label = stringResource(R.string.loud_sound_reduction),
                     description = stringResource(R.string.loud_sound_reduction_description),
-                    checked = loudSoundReductionChecked,
+                    checked = loudSoundReductionChecked ?: false,
                     onCheckedChange = onLoudSoundReductionCheckedChange,
                     enabled = isPremium,
                 )

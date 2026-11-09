@@ -16,7 +16,7 @@
     android:clipToPadding="false"
     android:clipChildren="false">
 
-    <VideoView
+    <me.kavishdevar.librepods.presentation.overlays.LoopingVideoTextureView
         android:id="@+id/island_video_view"
         android:layout_width="80dp"
         android:layout_height="80dp"

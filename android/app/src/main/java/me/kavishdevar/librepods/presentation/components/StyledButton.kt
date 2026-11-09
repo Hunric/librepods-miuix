@@ -25,6 +25,7 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -68,6 +69,9 @@ import com.kyant.backdrop.highlight.Highlight
 import kotlinx.coroutines.launch
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.Button as MiuixButton
+import top.yukonga.miuix.kmp.basic.ButtonDefaults as MiuixButtonDefaults
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import me.kavishdevar.librepods.utils.inspectDragGestures
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -96,36 +100,55 @@ fun StyledButton(
     content: @Composable RowScope.() -> Unit,
 ) {
     when (LocalDesignSystem.current) {
-        DesignSystem.Material -> {
+        DesignSystem.Miuix -> {
             when (materialButtonStyle) {
                 MaterialButtonStyle.Filled -> {
-                    Button(
+                    MiuixButton(
                         modifier = modifier.height(48.dp),
                         onClick = onClick,
+                        enabled = enabled,
+                        colors = MiuixButtonDefaults.buttonColorsPrimary(),
                         content = content
                     )
                 }
                 MaterialButtonStyle.Tonal -> {
-                    FilledTonalButton(
+                    MiuixButton(
                         modifier = modifier.height(48.dp),
                         onClick = onClick,
+                        enabled = enabled,
+                        colors = MiuixButtonDefaults.buttonColors(
+                            color = surfaceColor.takeIf { it.isSpecified } ?: MiuixTheme.colorScheme.secondaryVariant
+                        ),
                         content = content,
-                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = surfaceColor)
                     )
                 }
 
                 MaterialButtonStyle.Outlined -> {
-                    OutlinedButton(
-                        modifier = modifier.height(48.dp),
+                    MiuixButton(
+                        modifier = modifier.height(48.dp).border(
+                            1.dp,
+                            MiuixTheme.colorScheme.outline,
+                            RoundedCornerShape(16.dp)
+                        ),
                         onClick = onClick,
+                        enabled = enabled,
+                        colors = MiuixButtonDefaults.buttonColors(
+                            color = Color.Transparent,
+                            contentColor = MiuixTheme.colorScheme.primary
+                        ),
                         content = content
                     )
                 }
 
                 MaterialButtonStyle.Normal -> {
-                    TextButton(
+                    MiuixButton(
                         modifier = modifier.height(48.dp),
                         onClick = onClick,
+                        enabled = enabled,
+                        colors = MiuixButtonDefaults.buttonColors(
+                            color = Color.Transparent,
+                            contentColor = MiuixTheme.colorScheme.primary
+                        ),
                         content = content
                     )
                 }

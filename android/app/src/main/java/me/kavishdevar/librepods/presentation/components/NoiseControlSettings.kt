@@ -78,6 +78,11 @@ import me.kavishdevar.librepods.data.NoiseControlMode
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import top.yukonga.miuix.kmp.basic.Button as MiuixButton
+import top.yukonga.miuix.kmp.basic.ButtonDefaults as MiuixButtonDefaults
+import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import me.kavishdevar.librepods.presentation.theme.sectionHeader
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.roundToInt
@@ -87,11 +92,14 @@ import kotlin.math.roundToInt
 @Composable
 fun NoiseControlSettings(
     showOffListeningMode: Boolean,
-    noiseControlModeValue: Int,
+    showAdaptive: Boolean = true,
+    noiseControlModeValue: Int?,
     onNoiseControlModeChanged: (Int) -> Unit
 ) {
+    val savedMode = noiseControlModeValue?.takeIf { it in 1..4 }
+        ?.let { NoiseControlMode.entries[it - 1] }
     when (LocalDesignSystem.current) {
-        DesignSystem.Material -> {
+        DesignSystem.Miuix -> {
             val options = buildList {
                 if (showOffListeningMode) {
                     add(
@@ -110,13 +118,15 @@ fun NoiseControlSettings(
                         R.drawable.transparency
                     )
                 )
-                add(
-                    Triple(
-                        NoiseControlMode.ADAPTIVE,
-                        R.string.adaptive,
-                        R.drawable.adaptive
+                if (showAdaptive) {
+                    add(
+                        Triple(
+                            NoiseControlMode.ADAPTIVE,
+                            R.string.adaptive,
+                            R.drawable.adaptive
+                        )
                     )
-                )
+                }
                 add(
                     Triple(
                         NoiseControlMode.NOISE_CANCELLATION,
@@ -126,60 +136,47 @@ fun NoiseControlSettings(
                 )
             }
 
-            val selectedMode = NoiseControlMode.entries[(noiseControlModeValue - 1).coerceIn(0, NoiseControlMode.entries.lastIndex)]
+            val selectedMode = savedMode
 
-            Column {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 4.dp, bottom = 12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.listening_mode),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelSmallEmphasized
-                    )
-                }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                MiuixText(
+                    text = stringResource(R.string.listening_mode),
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    options.forEachIndexed { index, (mode, labelRes, iconRes) ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                    options.forEach { (mode, labelRes, iconRes) ->
+                        val selected = selectedMode == mode
+                        MiuixButton(
+                            onClick = { onNoiseControlModeChanged(mode.ordinal + 1) },
                             modifier = Modifier.weight(1f),
+                            minHeight = 72.dp,
+                            insideMargin = androidx.compose.foundation.layout.PaddingValues(8.dp),
+                            colors = MiuixButtonDefaults.buttonColors(
+                                color = if (selected) MiuixTheme.colorScheme.primaryVariant else MiuixTheme.colorScheme.surfaceContainer,
+                                contentColor = if (selected) MiuixTheme.colorScheme.onPrimaryVariant else MiuixTheme.colorScheme.onSurface,
+                            ),
                         ) {
-                            ToggleButton(
-                                checked = selectedMode == mode,
-                                onCheckedChange = {
-                                    if (it) {
-                                        onNoiseControlModeChanged(mode.ordinal + 1)
-                                    }
-                                },
-                                shapes = when (index) {
-                                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                                    options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                                },
-                                colors = ToggleButtonDefaults.toggleButtonColors()
-                                    .copy(containerColor = MaterialTheme.colorScheme.surface),
-                                modifier = Modifier.fillMaxWidth()
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
-                                Icon(
+                                MiuixIcon(
                                     bitmap = ImageBitmap.imageResource(iconRes),
                                     contentDescription = null,
-                                    modifier = Modifier.size(42.dp)
+                                    modifier = Modifier.size(32.dp),
+                                )
+                                MiuixText(
+                                    text = stringResource(labelRes),
+                                    style = MiuixTheme.textStyles.body2,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2,
                                 )
                             }
-
-                            Text(
-                                text = stringResource(labelRes),
-                                style = MaterialTheme.typography.labelSmall,
-                                textAlign = TextAlign.Center,
-                                maxLines = 2,
-                                modifier = Modifier.fillMaxWidth()
-                            )
                         }
                     }
                 }
@@ -193,17 +190,24 @@ fun NoiseControlSettings(
             val textColorSelected = if (isDarkTheme) Color.White else Color.Black
             val selectedBackground = if (isDarkTheme) Color(0xBF5C5A5F) else Color(0xFFFFFFFF)
 
-            val noiseControlMode = remember { mutableStateOf(NoiseControlMode.OFF) }
+            val visibleModes = buildList {
+                if (showOffListeningMode) add(NoiseControlMode.OFF)
+                add(NoiseControlMode.TRANSPARENCY)
+                if (showAdaptive) add(NoiseControlMode.ADAPTIVE)
+                add(NoiseControlMode.NOISE_CANCELLATION)
+            }
+            val noiseControlMode = remember { mutableStateOf<NoiseControlMode?>(null) }
 
             val d1a = remember { mutableFloatStateOf(0f) }
             val d2a = remember { mutableFloatStateOf(0f) }
             val d3a = remember { mutableFloatStateOf(0f) }
 
             // this function exists solely for the dividers, should get rid of it
-            fun onModeSelected(mode: NoiseControlMode, received: Boolean = false) {
+            fun onModeSelected(mode: NoiseControlMode, fromSaved: Boolean = false) {
+                if (!fromSaved && mode !in visibleModes) return
                 val previousMode = noiseControlMode.value
 
-                val targetMode = if (!showOffListeningMode && mode == NoiseControlMode.OFF) {
+                val targetMode = if (!fromSaved && !showOffListeningMode && mode == NoiseControlMode.OFF) {
                      NoiseControlMode.TRANSPARENCY
                 } else {
                     mode
@@ -211,7 +215,7 @@ fun NoiseControlSettings(
 
                 noiseControlMode.value = targetMode
 
-                if (!received && targetMode != previousMode) onNoiseControlModeChanged(targetMode.ordinal + 1)
+                if (!fromSaved && targetMode != previousMode) onNoiseControlModeChanged(targetMode.ordinal + 1)
 
 
                 when (noiseControlMode.value) {
@@ -235,14 +239,23 @@ fun NoiseControlSettings(
                         d2a.floatValue = 0f
                         d3a.floatValue = 1f
                     }
+                    null -> {
+                        d1a.floatValue = 1f
+                        d2a.floatValue = 1f
+                        d3a.floatValue = 1f
+                    }
                 }
             }
 
 
-            val index = (noiseControlModeValue - 1).coerceIn(0, NoiseControlMode.entries.size - 1)
-            noiseControlMode.value = NoiseControlMode.entries[index]
-
-            onModeSelected(noiseControlMode.value, received = true)
+            noiseControlMode.value = savedMode
+            if (savedMode != null) {
+                onModeSelected(savedMode, fromSaved = true)
+            } else {
+                d1a.floatValue = 1f
+                d2a.floatValue = 1f
+                d3a.floatValue = 1f
+            }
 
             Box(
                 modifier = Modifier
@@ -262,21 +275,15 @@ fun NoiseControlSettings(
                     .padding(vertical = 8.dp)
             ) {
                 val density = LocalDensity.current
-                val buttonCount = if (showOffListeningMode) 4 else 3
+                val buttonCount = visibleModes.size
                 val buttonWidth = maxWidth / buttonCount
+                val selectedIndex = noiseControlMode.value?.let { visibleModes.indexOf(it) } ?: -1
 
                 val isDragging = remember { mutableStateOf(false) }
                 var dragOffset by remember {
-                    mutableFloatStateOf(
-                        with(density) {
-                            when(noiseControlMode.value) {
-                                NoiseControlMode.OFF -> if (showOffListeningMode) 0f else buttonWidth.toPx()
-                                NoiseControlMode.TRANSPARENCY -> if (showOffListeningMode) buttonWidth.toPx() else 0f
-                                NoiseControlMode.ADAPTIVE -> if (showOffListeningMode) (buttonWidth * 2).toPx() else buttonWidth.toPx()
-                                NoiseControlMode.NOISE_CANCELLATION -> if (showOffListeningMode) (buttonWidth * 3).toPx() else (buttonWidth * 2).toPx()
-                            }
-                        }
-                    )
+                    mutableFloatStateOf(with(density) {
+                        buttonWidth.toPx() * selectedIndex.coerceAtLeast(0)
+                    })
                 }
 
                 val animationSpec: AnimationSpec<Float> = SpringSpec(
@@ -285,12 +292,7 @@ fun NoiseControlSettings(
                     visibilityThreshold = 0.01f
                 )
 
-                val targetOffset = buttonWidth * when(noiseControlMode.value) {
-                    NoiseControlMode.OFF -> if (showOffListeningMode) 0 else 1
-                    NoiseControlMode.TRANSPARENCY -> if (showOffListeningMode) 1 else 0
-                    NoiseControlMode.ADAPTIVE -> if (showOffListeningMode) 2 else 1
-                    NoiseControlMode.NOISE_CANCELLATION -> if (showOffListeningMode) 3 else 2
-                }
+                val targetOffset = buttonWidth * selectedIndex.coerceAtLeast(0)
 
                 val animatedOffset by animateFloatAsState(
                     targetValue = with(density) {
@@ -339,23 +341,25 @@ fun NoiseControlSettings(
                                 thickness = 1.dp,
                                 modifier = Modifier
                                     .padding(vertical = 10.dp)
-                                    .alpha(d2a.floatValue),
+                                    .alpha(if (showAdaptive) d2a.floatValue else if (noiseControlMode.value == NoiseControlMode.TRANSPARENCY || noiseControlMode.value == NoiseControlMode.NOISE_CANCELLATION) 0f else 1f),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                             )
-                            NoiseControlButton(
-                                icon = ImageBitmap.imageResource(R.drawable.adaptive),
-                                onClick = { onModeSelected(NoiseControlMode.ADAPTIVE) },
-                                textColor = if (noiseControlMode.value == NoiseControlMode.ADAPTIVE) textColorSelected else textColor,
-                                modifier = Modifier.weight(1f),
-                                usePadding = false
-                            )
-                            VerticalDivider(
-                                thickness = 1.dp,
-                                modifier = Modifier
-                                    .padding(vertical = 10.dp)
-                                    .alpha(d3a.floatValue),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-                            )
+                            if (showAdaptive) {
+                                NoiseControlButton(
+                                    icon = ImageBitmap.imageResource(R.drawable.adaptive),
+                                    onClick = { onModeSelected(NoiseControlMode.ADAPTIVE) },
+                                    textColor = if (noiseControlMode.value == NoiseControlMode.ADAPTIVE) textColorSelected else textColor,
+                                    modifier = Modifier.weight(1f),
+                                    usePadding = false
+                                )
+                                VerticalDivider(
+                                    thickness = 1.dp,
+                                    modifier = Modifier
+                                        .padding(vertical = 10.dp)
+                                        .alpha(d3a.floatValue),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                )
+                            }
                             NoiseControlButton(
                                 icon = ImageBitmap.imageResource(R.drawable.noise_cancellation),
                                 onClick = { onModeSelected(NoiseControlMode.NOISE_CANCELLATION) },
@@ -365,43 +369,42 @@ fun NoiseControlSettings(
                             )
                         }
 
-                        Box(
-                            modifier = Modifier
-                                .width(buttonWidth)
-                                .fillMaxHeight()
-                                .offset { IntOffset(animatedOffset.roundToInt(), 0) }
-                                .zIndex(0f)
-                                .draggable(
-                                    orientation = Orientation.Horizontal,
-                                    state = rememberDraggableState { delta ->
-                                        dragOffset = (dragOffset + delta).coerceIn(
-                                            0f,
-                                            with(density) { (buttonWidth * (buttonCount - 1)).toPx() }
-                                        )
-                                    },
-                                    onDragStarted = { isDragging.value = true },
-                                    onDragStopped = {
-                                        isDragging.value = false
-                                        val position =
-                                            dragOffset / with(density) { buttonWidth.toPx() }
-                                        val newIndex = position.roundToInt()
-                                        val newMode = when (newIndex) {
-                                            0 -> if (showOffListeningMode) NoiseControlMode.OFF else NoiseControlMode.TRANSPARENCY
-                                            1 -> if (showOffListeningMode) NoiseControlMode.TRANSPARENCY else NoiseControlMode.ADAPTIVE
-                                            2 -> if (showOffListeningMode) NoiseControlMode.ADAPTIVE else NoiseControlMode.NOISE_CANCELLATION
-                                            3 -> NoiseControlMode.NOISE_CANCELLATION
-                                            else -> noiseControlMode.value // Keep current if index is invalid
-                                        }
-                                        onModeSelected(newMode)
-                                    }
-                                )
-                        ) {
+                        if (noiseControlMode.value?.let { it in visibleModes } == true) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(3.dp)
-                                    .background(selectedBackground, RoundedCornerShape(26.dp))
-                            )
+                                    .width(buttonWidth)
+                                    .fillMaxHeight()
+                                    .offset { IntOffset(animatedOffset.roundToInt(), 0) }
+                                    .zIndex(0f)
+                                    .draggable(
+                                        orientation = Orientation.Horizontal,
+                                        state = rememberDraggableState { delta ->
+                                            dragOffset = (dragOffset + delta).coerceIn(
+                                                0f,
+                                                with(density) { (buttonWidth * (buttonCount - 1)).toPx() }
+                                            )
+                                        },
+                                        onDragStarted = {
+                                            dragOffset = with(density) { targetOffset.toPx() }
+                                            isDragging.value = true
+                                        },
+                                        onDragStopped = {
+                                            isDragging.value = false
+                                            val position =
+                                                dragOffset / with(density) { buttonWidth.toPx() }
+                                            val newIndex = position.roundToInt()
+                                            val newMode = visibleModes.getOrNull(newIndex)
+                                            newMode?.let { onModeSelected(it) }
+                                        }
+                                    )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(3.dp)
+                                        .background(selectedBackground, RoundedCornerShape(26.dp))
+                                )
+                            }
                         }
 
                         Row(
@@ -436,23 +439,25 @@ fun NoiseControlSettings(
                                 thickness = 1.dp,
                                 modifier = Modifier
                                     .padding(vertical = 10.dp)
-                                    .alpha(d2a.floatValue),
+                                    .alpha(if (showAdaptive) d2a.floatValue else if (noiseControlMode.value == NoiseControlMode.TRANSPARENCY || noiseControlMode.value == NoiseControlMode.NOISE_CANCELLATION) 0f else 1f),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                             )
-                            NoiseControlButton(
-                                icon = ImageBitmap.imageResource(R.drawable.adaptive),
-                                onClick = { onModeSelected(NoiseControlMode.ADAPTIVE) },
-                                textColor = if (noiseControlMode.value == NoiseControlMode.ADAPTIVE) textColorSelected else textColor,
-                                modifier = Modifier.weight(1f),
-                                usePadding = false
-                            )
-                            VerticalDivider(
-                                thickness = 1.dp,
-                                modifier = Modifier
-                                    .padding(vertical = 10.dp)
-                                    .alpha(d3a.floatValue),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-                            )
+                            if (showAdaptive) {
+                                NoiseControlButton(
+                                    icon = ImageBitmap.imageResource(R.drawable.adaptive),
+                                    onClick = { onModeSelected(NoiseControlMode.ADAPTIVE) },
+                                    textColor = if (noiseControlMode.value == NoiseControlMode.ADAPTIVE) textColorSelected else textColor,
+                                    modifier = Modifier.weight(1f),
+                                    usePadding = false
+                                )
+                                VerticalDivider(
+                                    thickness = 1.dp,
+                                    modifier = Modifier
+                                        .padding(vertical = 10.dp)
+                                        .alpha(d3a.floatValue),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                )
+                            }
                             NoiseControlButton(
                                 icon = ImageBitmap.imageResource(R.drawable.noise_cancellation),
                                 onClick = { onModeSelected(NoiseControlMode.NOISE_CANCELLATION) },
@@ -482,12 +487,14 @@ fun NoiseControlSettings(
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f)
                         )
-                        Text(
-                            text = stringResource(R.string.adaptive),
-                            style = TextStyle(fontSize = 12.sp, color = textColor),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.weight(1f)
-                        )
+                        if (showAdaptive) {
+                            Text(
+                                text = stringResource(R.string.adaptive),
+                                style = TextStyle(fontSize = 12.sp, color = textColor),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                         Text(
                             text = stringResource(R.string.noise_cancellation),
                             style = TextStyle(fontSize = 12.sp, color = textColor),
@@ -505,11 +512,9 @@ fun NoiseControlSettings(
 @Preview
 @Composable
 fun NoiseControlSettingsPreview() {
-    LibrePodsTheme(
-        m3eEnabled = true
-    ) {
+    LibrePodsTheme() {
         Box(
-            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
+            modifier = Modifier.background(MiuixTheme.colorScheme.background)
         ) {
             NoiseControlSettings(
                 showOffListeningMode = false,

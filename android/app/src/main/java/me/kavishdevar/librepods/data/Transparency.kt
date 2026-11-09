@@ -83,9 +83,12 @@ data class TransparencySettings(
     }
 }
 
-fun parseTransparencySettingsResponse(data: ByteArray): TransparencySettings? {
-    if (data.size < 50) return null // 50 is arbitrary, too lazy to count
+fun parseTransparencySettingsResponse(data: ByteArray?): TransparencySettings? {
+    // 25 floats are required; the optional own-voice field must also be complete.
+    if (data == null || data.size < 100 || data.size in 101..103) return null
     val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
+    val floatCount = if (data.size >= 104) 26 else 25
+    if ((0 until floatCount).any { !buffer.getFloat(it * 4).isFinite() }) return null
 
     val enabled = buffer.float
 
@@ -141,41 +144,46 @@ fun parseTransparencySettingsResponse(data: ByteArray): TransparencySettings? {
 
 private var debounceJob: Job? = null
 
-fun sendTransparencySettings(writer: (ATTHandles, ByteArray) -> Unit, transparencySettings: TransparencySettings) {
+internal fun encodeTransparencySettings(currentData: ByteArray, settings: TransparencySettings): ByteArray? {
+    if (currentData.size > 512 || parseTransparencySettingsResponse(currentData) == null ||
+        settings.leftEQ.size != 8 || settings.rightEQ.size != 8) return null
+    val floats = settings.leftEQ.toList() + settings.rightEQ.toList() + listOf(
+        settings.leftAmplification, settings.rightAmplification, settings.leftTone, settings.rightTone,
+        settings.leftAmbientNoiseReduction, settings.rightAmbientNoiseReduction
+    )
+    if (floats.any { !it.isFinite() }) return null
+    // Optional fields and unknown trailing bytes belong to the original device value.
+    val buffer = ByteBuffer.wrap(currentData.copyOf()).order(ByteOrder.LITTLE_ENDIAN)
+    buffer.putFloat(0, if (settings.enabled) 1f else 0f)
+    settings.leftEQ.forEachIndexed { i, value -> buffer.putFloat(4 + i * 4, value) }
+    buffer.putFloat(36, settings.leftAmplification)
+    buffer.putFloat(40, settings.leftTone)
+    buffer.putFloat(44, if (settings.leftConversationBoost) 1f else 0f)
+    buffer.putFloat(48, settings.leftAmbientNoiseReduction)
+    settings.rightEQ.forEachIndexed { i, value -> buffer.putFloat(52 + i * 4, value) }
+    buffer.putFloat(84, settings.rightAmplification)
+    buffer.putFloat(88, settings.rightTone)
+    buffer.putFloat(92, if (settings.rightConversationBoost) 1f else 0f)
+    buffer.putFloat(96, settings.rightAmbientNoiseReduction)
+    return buffer.array()
+}
+
+fun sendTransparencySettings(
+    writer: (ATTHandles, ByteArray) -> Unit,
+    transparencySettings: TransparencySettings,
+    baseline: ByteArray? = null
+): Job {
+    val snapshot = baseline?.copyOf()
     debounceJob?.cancel()
-    debounceJob = CoroutineScope(Dispatchers.IO).launch {
+    val job = CoroutineScope(Dispatchers.IO).launch {
         delay(100)
         try {
-            val buffer = ByteBuffer.allocate(
-                if (transparencySettings.ownVoiceAmplification != null) 104 else 100
-            ).order(ByteOrder.LITTLE_ENDIAN)
-
-            buffer.putFloat(if (transparencySettings.enabled) 1.0f else 0.0f)
-
-            for (eq in transparencySettings.leftEQ) {
-                buffer.putFloat(eq)
-            }
-            buffer.putFloat(transparencySettings.leftAmplification)
-            buffer.putFloat(transparencySettings.leftTone)
-            buffer.putFloat(if (transparencySettings.leftConversationBoost) 1.0f else 0.0f)
-            buffer.putFloat(transparencySettings.leftAmbientNoiseReduction)
-
-            for (eq in transparencySettings.rightEQ) {
-                buffer.putFloat(eq)
-            }
-            buffer.putFloat(transparencySettings.rightAmplification)
-            buffer.putFloat(transparencySettings.rightTone)
-            buffer.putFloat(if (transparencySettings.rightConversationBoost) 1.0f else 0.0f)
-            buffer.putFloat(transparencySettings.rightAmbientNoiseReduction)
-
-            if (transparencySettings.ownVoiceAmplification != null) {
-                buffer.putFloat(transparencySettings.ownVoiceAmplification)
-            }
-
-            val data = buffer.array()
+            val data = snapshot?.let { encodeTransparencySettings(it, transparencySettings) } ?: return@launch
             writer(ATTHandles.TRANSPARENCY, data)
         } catch (e: IOException) {
             e.printStackTrace()
         }
     }
+    debounceJob = job
+    return job
 }

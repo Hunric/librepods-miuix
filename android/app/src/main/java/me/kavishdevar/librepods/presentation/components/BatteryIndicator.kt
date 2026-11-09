@@ -23,16 +23,12 @@ import android.content.res.Configuration
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -59,6 +55,8 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
 
 @Composable
 fun BatteryIndicator(
@@ -67,11 +65,9 @@ fun BatteryIndicator(
     prefix: String = "",
     previousCharging: Boolean = false,
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
-    val batteryTextColor = if (isDarkTheme) Color.White else Color.Black
+    val batteryTextColor = MiuixTheme.colorScheme.onSurface
     val batteryFillColor =
-        if (batteryPercentage > 25) if (isDarkTheme) Color(0xFF2ED158) else Color(0xFF35C759)
-        else if (isDarkTheme) Color(0xFFFC4244) else Color(0xFFfe373C)
+        if (batteryPercentage > 25) Color(0xFF35C759) else Color(0xFFFE373C)
 
     val initialScale = if (previousCharging) 1f else 0f
     val scaleAnim = remember { Animatable(initialScale) }
@@ -83,7 +79,7 @@ fun BatteryIndicator(
     }
 
     Column(
-        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer).padding(4.dp), // just for haze to work
+        modifier = Modifier.padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
@@ -92,7 +88,7 @@ fun BatteryIndicator(
             val strokeWidthPx = with(LocalDensity.current) { 4.dp.toPx() }
             val gapFromCenterPx = with(LocalDensity.current) { 8.sp.toPx() }
 
-            val trackColor = if (isDarkTheme) Color(0xFF272728) else Color(0xFFE3E3E8)
+            val trackColor = MiuixTheme.colorScheme.surfaceContainerHigh
             val optimizedLimit = 0.8f
             val progress = batteryPercentage / 100f
 
@@ -174,7 +170,7 @@ fun BatteryIndicator(
                 }
             }
 
-            Text(
+            MiuixText(
                 text = "\uDBC0\uDEE6", style = TextStyle(
                     fontSize = 14.sp,
                     fontFamily = FontFamily(Font(R.font.sf_pro)),
@@ -186,7 +182,7 @@ fun BatteryIndicator(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        Text(
+        MiuixText(
             text = "$prefix $batteryPercentage%",
             color = batteryTextColor,
             style = TextStyle(
@@ -201,7 +197,7 @@ fun BatteryIndicator(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun BatteryIndicatorPreview() {
-    LibrePodsTheme(m3eEnabled = false) {
+    LibrePodsTheme(darkTheme = true) {
         BatteryIndicator(
             batteryPercentage = 50,
             status = BatteryStatus.OPTIMIZED_CHARGING,

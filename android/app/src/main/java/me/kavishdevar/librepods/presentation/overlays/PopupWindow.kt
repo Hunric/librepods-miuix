@@ -22,14 +22,12 @@ package me.kavishdevar.librepods.presentation.overlays
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
-import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -38,13 +36,13 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.VideoView
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.data.AirPodsNotifications
 import me.kavishdevar.librepods.data.Battery
@@ -61,6 +59,8 @@ class PopupWindow(
     private var autoCloseHandler = Handler(Looper.getMainLooper())
     private var autoCloseRunnable: Runnable? = null
     private var batteryUpdateReceiver: BroadcastReceiver? = null
+    private var entryAnimator: ObjectAnimator? = null
+    private var entryPreDrawListener: ViewTreeObserver.OnPreDrawListener? = null
 
     @Suppress("DEPRECATION")
     private val mParams: WindowManager.LayoutParams = WindowManager.LayoutParams().apply {
@@ -78,6 +78,7 @@ class PopupWindow(
         dimAmount = 0.3f
         flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
             WindowManager.LayoutParams.FLAG_FULLSCREEN or
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_DIM_BEHIND or
             WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
@@ -130,51 +131,105 @@ class PopupWindow(
     }
 
     @SuppressLint("InlinedApi", "SetTextI18s")
-    fun open(name: String = "AirPods Pro", batteryNotification: AirPodsNotifications.BatteryNotification) {
+    fun open(name: String = "AirPods Pro", batteryNotification: AirPodsNotifications.BatteryNotification): Boolean {
+        var added = false
         try {
             if (mView.windowToken == null && mView.parent == null && !isClosing) {
                 mView.findViewById<TextView>(R.id.name).text = name
 
                 updateBatteryStatus(batteryNotification)
 
-                val vid = mView.findViewById<VideoView>(R.id.video)
-                vid.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
-                vid.setVideoPath("android.resource://me.kavishdevar.librepods/" + R.raw.connected)
-                vid.resolveAdjustedSize(vid.width, vid.height)
-                vid.start()
-                vid.setOnCompletionListener {
-                    vid.start()
-                }
+                val video = mView.findViewById<LoopingVideoTextureView>(R.id.video)
+                // TextureView has no intrinsic wrap_content size; use connected.mp4's dimensions.
+                video.setVideoSize(width = 1050, height = 354)
+                video.visibility = View.VISIBLE
+                video.play(R.raw.connected)
 
-                try {
-                    mWindowManager.addView(mView, mParams)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
-                val displayMetrics = mView.context.resources.displayMetrics
-                val screenHeight = displayMetrics.heightPixels
-
-                mView.translationY = screenHeight.toFloat()
+                mView.visibility = View.VISIBLE
+                mView.translationY = 0f
                 mView.alpha = 1f
+                mParams.alpha = 0f
+                mWindowManager.addView(mView, mParams)
+                added = true
 
-                val translationY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, screenHeight.toFloat(), 0f)
+                mView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
-                ObjectAnimator.ofPropertyValuesHolder(mView, translationY).apply {
-                    duration = 500
-                    interpolator = DecelerateInterpolator()
-                    start()
+                val entryListener = object : ViewTreeObserver.OnPreDrawListener {
+                    override fun onPreDraw(): Boolean {
+                        val observer = mView.viewTreeObserver
+                        if (observer.isAlive) observer.removeOnPreDrawListener(this)
+                        if (entryPreDrawListener === this) entryPreDrawListener = null
+
+                        val popupHeight = mView.height
+                        if (isClosing || popupHeight <= 0) {
+                            mParams.alpha = 1f
+                            if (mView.parent != null) {
+                                mWindowManager.updateViewLayout(mView, mParams)
+                            }
+                            mView.setLayerType(View.LAYER_TYPE_NONE, null)
+                            return true
+                        }
+
+                        mView.postOnAnimation {
+                            if (isClosing || mView.parent == null) {
+                                mParams.alpha = 1f
+                                if (mView.parent != null) {
+                                    mWindowManager.updateViewLayout(mView, mParams)
+                                }
+                                mView.setLayerType(View.LAYER_TYPE_NONE, null)
+                                return@postOnAnimation
+                            }
+
+                            mParams.alpha = 1f
+                            mWindowManager.updateViewLayout(mView, mParams)
+
+                            val startY = popupHeight.toFloat()
+                            mView.translationY = startY
+                            val animator = ObjectAnimator.ofFloat(
+                                mView,
+                                View.TRANSLATION_Y,
+                                startY,
+                                0f
+                            ).apply {
+                                duration = 360
+                                interpolator = DecelerateInterpolator(1.35f)
+                                addListener(object : AnimatorListenerAdapter() {
+                                    override fun onAnimationEnd(animation: Animator) {
+                                        if (entryAnimator === animation) entryAnimator = null
+                                        if (!isClosing) {
+                                            mView.setLayerType(View.LAYER_TYPE_NONE, null)
+                                        }
+                                    }
+                                })
+                            }
+                            entryAnimator = animator
+                            animator.start()
+                        }
+                        return true
+                    }
                 }
+                entryPreDrawListener = entryListener
+                mView.viewTreeObserver.addOnPreDrawListener(entryListener)
 
                 registerBatteryUpdateReceiver()
 
                 autoCloseRunnable = Runnable { close() }
                 autoCloseHandler.postDelayed(autoCloseRunnable!!, 12000)
+                return true
             }
         } catch (e: Exception) {
-            Log.e("PopupWindow", "Error opening popup: ${e.message}")
-            onCloseCallback()
+            Log.e("PopupWindow", "Error opening popup on thread=${Thread.currentThread().name}: ${e.message}")
+            if (added) {
+                close()
+            } else {
+                mView.findViewById<LoopingVideoTextureView>(R.id.video).apply {
+                    visibility = View.VISIBLE
+                    releasePlayer()
+                }
+                onCloseCallback()
+            }
         }
+        return false
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -255,25 +310,41 @@ class PopupWindow(
             if (isClosing) return
             isClosing = true
 
+            entryPreDrawListener?.let { listener ->
+                val observer = mView.viewTreeObserver
+                if (observer.isAlive) observer.removeOnPreDrawListener(listener)
+                entryPreDrawListener = null
+            }
+            entryAnimator?.cancel()
+            entryAnimator = null
+
             autoCloseRunnable?.let { autoCloseHandler.removeCallbacks(it) }
             unregisterBatteryUpdateReceiver()
 
-            val vid = mView.findViewById<VideoView>(R.id.video)
-            vid.stopPlayback()
+            mParams.alpha = 1f
+            if (mView.parent != null) {
+                mWindowManager.updateViewLayout(mView, mParams)
+            }
+
+            val video = mView.findViewById<LoopingVideoTextureView>(R.id.video)
+            video.pause()
+            mView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
             ObjectAnimator.ofFloat(mView, "translationY", mView.height.toFloat()).apply {
-                duration = 500
-                interpolator = AccelerateInterpolator()
+                duration = 280
+                interpolator = AccelerateInterpolator(1.35f)
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
                         try {
                             mView.visibility = View.GONE
+                            video.releasePlayer()
                             if (mView.parent != null) {
                                 mWindowManager.removeView(mView)
                             }
                         } catch (e: Exception) {
                             Log.e("PopupWindow", "Error removing view: ${e.message}")
                         } finally {
+                            mView.setLayerType(View.LAYER_TYPE_NONE, null)
                             isClosing = false
                             onCloseCallback()
                         }
