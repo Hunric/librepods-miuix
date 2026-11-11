@@ -8,8 +8,6 @@ body:
       label: Scope
       options:
         - Android
-        - Linux
-        - Both
         - Other
     validations:
       required: true

@@ -22,9 +22,6 @@
 <a href="https://github.com/kavishdevar/librepods/actions/workflows/ci-android.yml">
   <img src="https://github.com/kavishdevar/librepods/actions/workflows/ci-android.yml/badge.svg" />
 </a>
-<a href="https://github.com/kavishdevar/librepods/actions/workflows/ci-linux-rust.yml">
-  <img src="https://github.com/kavishdevar/librepods/actions/workflows/ci-linux-rust.yml/badge.svg" />
-</a>
 <a href="https://github.com/kavishdevar/librepods/issues">
   <img src="https://img.shields.io/github/issues/kavishdevar/librepods" />  
 </a>
@@ -39,25 +36,25 @@ LibrePods allows you to use AirPods features that are exclusive to Apple devices
 
 # Feature availability
 
-| Feature                                                     | Linux | Android |
-| ----------------------------------------------------------- | ----- | ------- |
-| Changing Listening Mode                                     | ✅     | ✅       |
-| Ear detection                                               | ✅     | ✅       |
-| Battery status                                              | ✅     | ✅       |
-| Renaming AirPods <details><summary>Note for Android</summary>On Android, you need to re-pair your AirPods after renaming them because Android might not use the latest name.</details>                                            | ✅     | ✅       |
-| Loud Sound Reduction                                        | 🔴     | ⚪       |
-| Head Gestures                                               | ⛔     | ✅       |
-| Conversational Awareness                                    | ✅     | ✅       |
-| Automatically connect to AirPods                            | ✅     | ✅       |
-| Hearing Aid                                                 | 🔴     | ⚪       |
-| Transparency Mode customization                             | 🔴     | ⚪       |
-| Multi-device connectivity (Bluetooth Multipoint; 2 devices only) | ⚪     | ⚪       |
-| <details><summary>Other accessibility configs (click to expand)</summary><ul><li>Press speed</li><li>Press and Hold duration</li><li>Noise Cancellation with single AirPod</li><li>Volume control on swipe</li><li>Volume swipe speed</li></ul></details>       | 🔴     | ✅       |
-| <details><summary>Other general configs</summary><ul><li>Press and Hold to cycle between listening modes/invoke digital assistant (invoking digital assistant needs a recent firmware)</li><li>Configure call controls</li><li>Personalized volume</li><li>Loud Sound Reduction (needs <a href="#vendorid-spoofing">VendorID spoofing</a>)</li><li>Microphone side</li><li>Pause media when falling asleep (needs a recent firmware)</li><li>Enable <code>Off listening mode</code> to switch to <code>Off</code></li></ul></details>                   | 🔴     | ✅       |
-| [Head-tracked Spatial Audio](#spatial-audio)                | ❓     | ❓       |
-| [Heart Rate Monitoring](#heart-rate-monitoring)             | 🔴     | 🟡       |
-| [Find My](#find-my)                                         | ❓     | ❓       |
-| [High quality two-way audio](#high-quality-two-way-audio)   | 🟡     | 🟡       |
+| Feature | Android |
+| --- | --- |
+| Changing Listening Mode | ✅ |
+| Ear detection | ✅ |
+| Battery status | ✅ |
+| Renaming AirPods <details><summary>Note for Android</summary>On Android, you need to re-pair your AirPods after renaming them because Android might not use the latest name.</details> | ✅ |
+| Loud Sound Reduction | ⚪ |
+| Head Gestures | ✅ |
+| Conversational Awareness | ✅ |
+| Automatically connect to AirPods | ✅ |
+| Hearing Aid | ⚪ |
+| Transparency Mode customization | ⚪ |
+| Multi-device connectivity (Bluetooth Multipoint; 2 devices only) | ⚪ |
+| <details><summary>Other accessibility configs (click to expand)</summary><ul><li>Press speed</li><li>Press and Hold duration</li><li>Noise Cancellation with single AirPod</li><li>Volume control on swipe</li><li>Volume swipe speed</li></ul></details> | ✅ |
+| <details><summary>Other general configs</summary><ul><li>Press and Hold to cycle between listening modes/invoke digital assistant (invoking digital assistant needs a recent firmware)</li><li>Configure call controls</li><li>Personalized volume</li><li>Loud Sound Reduction (needs <a href="#vendorid-spoofing">VendorID spoofing</a>)</li><li>Microphone side</li><li>Pause media when falling asleep (needs a recent firmware)</li><li>Enable <code>Off listening mode</code> to switch to <code>Off</code></li></ul></details> | ✅ |
+| [Head-tracked Spatial Audio](#spatial-audio) | ❓ |
+| [Heart Rate Monitoring](#heart-rate-monitoring) | 🟡 |
+| [Find My](#find-my) | ❓ |
+| [High quality two-way audio](#high-quality-two-way-audio) | 🟡 |
 
 | Symbol | Meaning                                                             |
 | ------ | ------------------------------------------------------------------- |
@@ -89,10 +86,6 @@ Spatializing stereo sound is beyond this project's scope and will never be avail
 
 Available in the `android/rewrite` branch. [builds](https://github.com/librepods-org/librepods/actions/workflows/ci-android.yml?query=branch%3Aandroid%2Frewrite)
 
-### Linux
-
-Not available yet (doesn't seem like something that would be useful on a computer anyway. If you have any suggestions, create a discussion.)
-
 ## High quality two-way audio
 On iOS/iPadOS, you can continue using A2DP while AirPods send the hi-res (AAC-ELD mono 64kHz?) audio stream from its microphone over AACP.
 
@@ -101,20 +94,15 @@ Record audio within the app using the AirPods' microphone without switching to H
 
 Recorder is work in progress; available in the `android/rewrite` branch. [builds](https://github.com/librepods-org/librepods/actions/workflows/ci-android.yml?query=branch%3Aandroid%2Frewrite)
 
-### Linux
-
-Check out [PR #655](https://github.com/librepods-org/librepods/pull/655).
-
 # Installation
 
 - [**Android**](/android/README.md)
-- [**Linux**](/linux/README.md)
 
 # VendorID Spoofing
 
 Turns out, if you change the VendorID in DID Profile to that of Apple, you get access to several special features!
 
-You can do this on Linux by editing the DeviceID in `/etc/bluetooth/main.conf`. Add this line to the config file `DeviceID = bluetooth:004C:0000:0000`. For android you can enable the `act as Apple device` setting in the app's settings (shown only when Xposed is available and LibrePods module is enabled).
+On Android, you can enable the `act as Apple device` setting in the app's settings (shown only when Xposed is available and LibrePods module is enabled).
 
 ## Multi-device Connectivity
 
@@ -124,7 +112,7 @@ Upto two devices can be simultaneously connected to AirPods, for audio and contr
 
 Accessibility settings like customizing transparency mode (amplification, balance, tone, conversation boost, and ambient noise reduction), and loud sound reduction can be configured.
 
-All hearing aid customizations can be done from Android (linux soon), including setting the audiogram result. The app doesn't provide a way to take a hearing test because it requires much more precision. It is much better to use an already available audiogram result. 
+All hearing aid customizations can be done from Android, including setting the audiogram result. The app doesn't provide a way to take a hearing test because it requires much more precision. It is much better to use an already available audiogram result. 
 
 # Protocol and Reverse Engineering
 
@@ -144,10 +132,6 @@ These parts of the app were completely AI-generated:
 Rest everything- the background service, the Bluetooth manager classes (AACP and ATT), the entire UI, even the smallest components were written manually.
 
 Some parts of the UI components were borrowed from [Kyant0's demo app](https://github.com/Kyant0/AndroidLiquidGlass/tree/master/catalog), which is licensed under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
-
-## Linux (rewrite)
-
-The `aacp.rs` and the `att.rs` files were translated from Kotlin to Rust with AI. Some parts of the `media_controller.rs` file, mainly the pulse integration, was also AI-generated.
 
 # Supporters
 
@@ -280,6 +264,6 @@ The GPL does not grant any rights to use the LibrePods name, logo, or branding. 
 
 If you see any misuse of the LibrePods name or logo, please report it to [me@kavish.xyz](mailto:me@kavish.xyz).
 
-The SF Pro and SF Symbols fonts used by the upstream project are the property of Apple Inc.. This fork removes both and falls back to the platform default font.
+The SF Pro and SF Symbols fonts used by the upstream project are the property of Apple Inc. and are not redistributable. This fork removes both: the icons were redrawn as vector drawables, and the interface text now uses Onest (SIL Open Font License 1.1), bundled as android/app/src/main/res/font/onest.ttf with its licence text in assets/Onest-OFL-1.1.txt.
 
 AirPods, AirPods Pro, AirPods Max, and the AirPods logo are trademarks of Apple Inc. The LibrePods project is not affiliated with or endorsed by Apple Inc. in any way.
