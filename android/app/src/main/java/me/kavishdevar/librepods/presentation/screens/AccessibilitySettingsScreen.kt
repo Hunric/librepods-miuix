@@ -286,8 +286,8 @@ fun AccessibilitySettingsScreen(viewModel: AirPodsViewModel, navigateToPurchase:
                     },
                     valueRange = 0f..100f,
                     snapPoints = listOf(75f),
-                    startIcon = "\uDBC0\uDEA1",
-                    endIcon = "\uDBC0\uDEA9",
+                    startIconRes = R.drawable.ic_volume_low,
+                    endIconRes = R.drawable.ic_volume_high,
                     independent = true,
                     onValueChangeFinished = { flushToneVolume() },
                     enabled = state.isPremium
@@ -337,7 +337,7 @@ fun AccessibilitySettingsScreen(viewModel: AirPodsViewModel, navigateToPurchase:
 //                        fontSize = 14.sp,
 //                        fontWeight = FontWeight.Bold,
 //                        color = textColor.copy(alpha = 0.6f),
-//                        fontFamily = FontFamily.Default
+//                        fontFamily = FontFamily(Font(R.font.sf_pro))
 //                    ), modifier = Modifier.padding(8.dp, bottom = 0.dp)
 //                )
 //                Column(
@@ -390,7 +390,7 @@ fun AccessibilitySettingsScreen(viewModel: AirPodsViewModel, navigateToPurchase:
 //                            stringResource(R.string.phone),
 //                            fontSize = 16.sp,
 //                            color = textColor,
-//                            fontFamily = FontFamily.Default,
+//                            fontFamily = FontFamily(Font(R.font.sf_pro)),
 //                            modifier = Modifier.weight(1f)
 //                        )
 //                        Checkbox(
@@ -453,7 +453,7 @@ fun AccessibilitySettingsScreen(viewModel: AirPodsViewModel, navigateToPurchase:
 //                            stringResource(R.string.media),
 //                            fontSize = 16.sp,
 //                            color = textColor,
-//                            fontFamily = FontFamily.Default,
+//                            fontFamily = FontFamily(Font(R.font.sf_pro)),
 //                            modifier = Modifier.weight(1f)
 //                        )
 //                        Checkbox(

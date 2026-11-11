@@ -40,8 +40,8 @@ fun AboutCard(
     val serialNumbers = when (LocalDesignSystem.current) {
         DesignSystem.Apple -> listOf(
             serialNumbers[0],
-            "􀀛 ${serialNumbers[1]}",
-            "􀀧 ${serialNumbers[2]}"
+            stringResource(R.string.left) + " " + serialNumbers[1],
+            stringResource(R.string.right) + " " + serialNumbers[2]
         )
 
         DesignSystem.Miuix -> listOf(

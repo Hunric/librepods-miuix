@@ -55,7 +55,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +63,7 @@ import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import me.kavishdevar.librepods.presentation.theme.sectionHeader
 import top.yukonga.miuix.kmp.basic.Card as MiuixCard
 import top.yukonga.miuix.kmp.basic.Switch as MiuixSwitch
@@ -170,7 +170,7 @@ fun StyledToggle(
                 text = description, style = TextStyle(
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
-                    fontFamily = FontFamily.Default,
+                    fontFamily = OnestFontFamily,
                 ), modifier = Modifier.padding(horizontal = 16.dp)
             )
         }

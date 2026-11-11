@@ -122,8 +122,8 @@ fun HearingAidAdjustmentsScreen(viewModel: AirPodsViewModel) {
                 valueRange = -amplificationLimit..amplificationLimit,
                 value = settings.amplification,
                 onValueChange = { value -> editSettings { it.copy(amplification = value.coerceIn(-amplificationLimit, amplificationLimit)) } },
-                startIcon = "􀊥",
-                endIcon = "􀊩",
+                startIconRes = R.drawable.ic_volume_low,
+                endIconRes = R.drawable.ic_volume_high,
                 independent = true,
                 onValueChangeFinished = { flushDraft() },
             )

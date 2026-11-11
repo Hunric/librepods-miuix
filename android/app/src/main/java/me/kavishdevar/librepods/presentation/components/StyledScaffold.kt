@@ -63,7 +63,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -80,6 +79,7 @@ import dev.chrisbanes.haze.rememberHazeState
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
 import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
 import top.yukonga.miuix.kmp.basic.Scaffold as MiuixScaffold
@@ -195,7 +195,7 @@ fun StyledScaffold(
                     ) {
                         StyledIconButton(
                             onClick = onNavigateBack,
-                            icon = "􀯶",
+                            icon = "\u2039",
                             backdrop = backdrop
                         )
                     }
@@ -241,7 +241,7 @@ fun StyledScaffold(
                                             fontSize = 20.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = if (isDarkTheme) Color.White else Color.Black,
-                                            fontFamily = FontFamily.Default
+                                            fontFamily = OnestFontFamily
                                         ),
                                         modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center

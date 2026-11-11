@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -59,16 +60,12 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
@@ -241,22 +238,22 @@ private fun StyledListItemContent(
                                 animationSpec = tween(durationMillis = 300)
                             )
 
-                            Text(
-                                text = "􀆅",
-                                style = TextStyle(
-                                    fontSize = 20.sp,
-                                    fontFamily = FontFamily.Default,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = floatAnimateState),
-                                ),
-                                modifier = Modifier.padding(end = 4.dp)
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = floatAnimateState),
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .size(20.dp)
                             )
                         } else {
-                            Text(
-                                text = "􀯻",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(0.6f),
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.6f),
                                 modifier = Modifier
                                     .padding(start = if (description != null) 6.dp else 0.dp)
+                                    .size(20.dp)
                             )
                         }
                     }

@@ -74,6 +74,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="24sp"
                 android:textColor="@color/white"
+                android:fontFamily="@font/onest"
                 android:gravity="center"
                 android:textFontWeight="300"
                 android:text="Phone"
@@ -135,6 +136,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="24sp"
                 android:textColor="@color/white"
+                android:fontFamily="@font/onest"
                 android:gravity="center"
                 android:textFontWeight="300"
                 android:text="Left"
@@ -196,6 +198,7 @@
                 android:textSize="24sp"
                 android:textFontWeight="300"
                 android:textColor="@color/white"
+                android:fontFamily="@font/onest"
                 android:gravity="center"
                 android:text="Right"
                 tools:ignore="HardcodedText" />
@@ -256,6 +259,7 @@
                 android:textSize="24sp"
                 android:textColor="@color/white"
                 android:gravity="center"
+                android:fontFamily="@font/onest"
                 android:textFontWeight="300"
                 android:text="Case"
                 tools:ignore="HardcodedText" />

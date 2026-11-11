@@ -14,11 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,13 +38,13 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import top.yukonga.miuix.kmp.basic.TextField as MiuixTextField
 
 
@@ -111,7 +115,7 @@ fun StyledInputField(
                     textStyle = TextStyle(
                         fontSize = 16.sp,
                         color = textColor,
-                        fontFamily = FontFamily.Default
+                        fontFamily = OnestFontFamily
                     ),
                     cursorBrush = SolidColor(textColor),
                     decorator = { innerTextField ->
@@ -133,7 +137,7 @@ fun StyledInputField(
                                         style = TextStyle(
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Light,
-                                            fontFamily = FontFamily.Default,
+                                            fontFamily = OnestFontFamily,
                                             color = textColor.copy(alpha = 0.8f)
                                         ),
                                         modifier = Modifier
@@ -149,15 +153,13 @@ fun StyledInputField(
                                         inputState.clearText()
                                     }
                                 ) {
-                                    Text(
-                                        text = "􀁡",
-                                        style = TextStyle(
-                                            fontSize = 16.sp,
-                                            fontFamily = FontFamily.Default,
-                                            color = if (isDarkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(
-                                                alpha = 0.6f
-                                            )
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = null,
+                                        tint = if (isDarkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(
+                                            alpha = 0.6f
                                         ),
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }

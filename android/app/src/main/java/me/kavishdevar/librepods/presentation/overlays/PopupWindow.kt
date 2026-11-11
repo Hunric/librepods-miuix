@@ -274,9 +274,10 @@ class PopupWindow(
         val batteryRightText = mView.findViewById<TextView>(R.id.right_battery)
         val batteryCaseText = mView.findViewById<TextView>(R.id.case_battery)
 
+        // Icons come from android:drawableStart in popup_window.xml, so the text is level only.
         batteryLeftText.text = batteryList.find { it.component == BatteryComponent.LEFT }?.let {
             if (it.status != BatteryStatus.DISCONNECTED) {
-                "\uDBC3\uDC8E    ${it.level}%"
+                "${it.level}%"
             } else {
                 ""
             }
@@ -284,7 +285,7 @@ class PopupWindow(
 
         batteryRightText.text = batteryList.find { it.component == BatteryComponent.RIGHT }?.let {
             if (it.status != BatteryStatus.DISCONNECTED) {
-                "\uDBC3\uDC8D    ${it.level}%"
+                "${it.level}%"
             } else {
                 ""
             }
@@ -292,7 +293,7 @@ class PopupWindow(
 
         batteryCaseText.text = batteryList.find { it.component == BatteryComponent.CASE }?.let {
             if (it.status != BatteryStatus.DISCONNECTED) {
-                "\uDBC3\uDE6C    ${it.level}%"
+                "${it.level}%"
             } else {
                 ""
             }

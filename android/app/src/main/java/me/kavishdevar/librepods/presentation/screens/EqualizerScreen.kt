@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -98,6 +99,7 @@ import me.kavishdevar.librepods.presentation.components.StyledListItem
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsUiState
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 import me.kavishdevar.librepods.presentation.viewmodel.demoState
@@ -314,7 +316,7 @@ fun EqualizerCard(
             //                            text = "Written into Changes",
             //                            style = TextStyle(
             //                                fontSize = 16.sp,
-            //                                fontFamily = FontFamily.Default,
+            //                                fontFamily = FontFamily(Font(R.font.sf_pro)),
             //                                fontWeight = FontWeight.Bold,
             //                                color = if (isSystemInDarkTheme()) Color.White else Color.Black
             //                            )
@@ -324,7 +326,7 @@ fun EqualizerCard(
             //                            text = "Avalon Emerson",
             //                            style = TextStyle(
             //                                fontSize = 14.sp,
-            //                                fontFamily = FontFamily.Default,
+            //                                fontFamily = FontFamily(Font(R.font.sf_pro)),
             //                                fontWeight = FontWeight.Normal,
             //                                color = if (isSystemInDarkTheme()) Color.White else Color.Black
             //                            )
@@ -348,10 +350,10 @@ fun EqualizerCard(
             //                            label = "media_icon"
             //                        ) { p ->
             //                            Text(
-            //                                text = if (p) "􀊄" else "􀊆",
+            //                                text = if (p) "play" else "pause",
             //                                style = TextStyle(
             //                                    fontSize = 24.sp,
-            //                                    fontFamily = FontFamily.Default,
+            //                                    fontFamily = FontFamily(Font(R.font.sf_pro)),
             //                                    fontWeight = FontWeight.Normal,
             //                                    color = Color(0xFF0091FF),
             //                                    textAlign = TextAlign.Center
@@ -575,7 +577,7 @@ fun EqualizerCard(
                                 text = stringResource(R.string.eq_low).uppercase(),
                                 style = TextStyle(
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Default,
+                                    fontFamily = OnestFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     color = (if (isSystemInDarkTheme()) Color.White else Color.Black).copy(
                                         0.2f
@@ -592,7 +594,7 @@ fun EqualizerCard(
                                 text = stringResource(R.string.eq_mid).uppercase(),
                                 style = TextStyle(
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Default,
+                                    fontFamily = OnestFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     color = (if (isSystemInDarkTheme()) Color.White else Color.Black).copy(
                                         0.2f
@@ -609,7 +611,7 @@ fun EqualizerCard(
                                 text = stringResource(R.string.eq_high).uppercase(),
                                 style = TextStyle(
                                     fontSize = 14.sp,
-                                    fontFamily = FontFamily.Default,
+                                    fontFamily = OnestFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     color = (if (isSystemInDarkTheme()) Color.White else Color.Black).copy(
                                         0.2f

@@ -59,7 +59,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,6 +70,7 @@ import me.kavishdevar.librepods.presentation.components.StyledSlider
 import me.kavishdevar.librepods.presentation.components.StyledToggle
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -147,8 +147,8 @@ fun TransparencySettingsScreen(viewModel: AirPodsViewModel) {
                 valueRange = -amplificationLimit..amplificationLimit,
                 value = settings.amplification,
                 onValueChange = { value -> editSettings { it.copy(amplification = value.coerceIn(-amplificationLimit, amplificationLimit)) } },
-                startIcon = "􀊥",
-                endIcon = "􀊩",
+                startIconRes = R.drawable.ic_volume_low,
+                endIconRes = R.drawable.ic_volume_high,
                 independent = true,
                 onValueChangeFinished = { flushDraft() },
             )
@@ -201,7 +201,7 @@ fun TransparencySettingsScreen(viewModel: AirPodsViewModel) {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = textColor.copy(alpha = 0.6f),
-                    fontFamily = FontFamily.Default
+                    fontFamily = OnestFontFamily
                 ),
                 modifier = Modifier.padding(16.dp, bottom = 4.dp)
             )

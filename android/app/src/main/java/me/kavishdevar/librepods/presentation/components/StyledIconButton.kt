@@ -69,7 +69,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
@@ -89,6 +88,7 @@ import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -137,7 +137,7 @@ fun StyledIconButton(
                     text = icon,
                     color = foreground,
                     style = MiuixTheme.textStyles.headline2,
-                    fontFamily = FontFamily.Default,
+                    fontFamily = OnestFontFamily,
                 )
             }
         }
@@ -381,7 +381,7 @@ half4 main(float2 coord) {
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Normal,
                         color = if (iconTint.isSpecified) iconTint else if (darkMode) Color.White else Color.Black,
-                        fontFamily = FontFamily.Default
+                        fontFamily = OnestFontFamily
                     )
                 )
             }
@@ -402,7 +402,7 @@ fun StyledIconButtonPreview() {
             RoundedCornerShape(28.dp)
         ), contentAlignment = Alignment.Center) {
         StyledIconButton(
-            icon = "􀍟",
+            icon = "\u2699",
             onClick = { }
         )
     }

@@ -47,7 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,6 +64,7 @@ import me.kavishdevar.librepods.presentation.components.StyledListItem
 import me.kavishdevar.librepods.presentation.components.StyledToggle
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -142,7 +142,7 @@ fun HearingAidScreen(viewModel: AirPodsViewModel, onNavigateHearingAidAdjustment
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Light,
                 color = (if (isSystemInDarkTheme()) Color.White else Color.Black).copy(alpha = 0.6f),
-                fontFamily = FontFamily.Default
+                fontFamily = OnestFontFamily
             ),
             modifier = Modifier.padding(horizontal = 16.dp)
         )

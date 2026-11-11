@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Charging case silhouette: upright rounded rectangle (the case standing up), so it
+     still reads as a case at 14dp. White fill so it stays visible with
+     android:drawableTint in both light and dark popups. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M8.5,4h7C17.99,4 20,6.01 20,8.5v7c0,2.49 -2.01,4.5 -4.5,4.5h-7C6.01,20 4,17.99 4,15.5v-7C4,6.01 6.01,4 8.5,4z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

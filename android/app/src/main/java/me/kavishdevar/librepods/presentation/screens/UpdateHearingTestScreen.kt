@@ -55,7 +55,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -68,6 +67,7 @@ import me.kavishdevar.librepods.bluetooth.ATTHandles
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsUiState
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 import top.yukonga.miuix.kmp.basic.TextField
@@ -160,7 +160,7 @@ fun UpdateHearingTestScreen(
                                 if (text.isBlank() || parsed != null) setHearingValue(left, index, parsed, token, generation)
                             },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            textStyle = TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp),
+                            textStyle = TextStyle(fontFamily = OnestFontFamily, fontSize = 14.sp),
                             modifier = Modifier.fillMaxWidth()
                         )
                         if (ownedValue == null && drafts[index].isBlank()) {

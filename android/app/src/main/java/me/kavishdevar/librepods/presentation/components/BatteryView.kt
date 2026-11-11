@@ -123,7 +123,7 @@ fun BatteryView(
                                 BatteryIndicator(
                                     leftLevel,
                                     left?.status ?: BatteryStatus.NOT_CHARGING,
-                                    "\uDBC6\uDCE5"
+                                    BatterySide.LEFT
                                 )
                             }
 
@@ -135,7 +135,7 @@ fun BatteryView(
                                 BatteryIndicator(
                                     rightLevel,
                                     right?.status ?: BatteryStatus.NOT_CHARGING,
-                                    "\uDBC6\uDCE8"
+                                    BatterySide.RIGHT
                                 )
                             }
                         }
@@ -171,7 +171,7 @@ fun BatteryView(
                         BatteryIndicator(
                             caseLevel,
                             case?.status ?: BatteryStatus.NOT_CHARGING,
-                            prefix = if (!isSingleDisplay) "\uDBC3\uDE6C" else ""
+                            side = if (!isSingleDisplay) BatterySide.CASE else BatterySide.NONE
                         )
                     }
                 }

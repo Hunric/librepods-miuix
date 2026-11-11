@@ -23,12 +23,17 @@ import android.content.res.Configuration
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -41,8 +46,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,14 +59,18 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
+
+/** Which bud (or the case) the reading belongs to; rendered as a vector/letter badge. */
+enum class BatterySide { NONE, LEFT, RIGHT, CASE }
 
 @Composable
 fun BatteryIndicator(
     batteryPercentage: Int,
     status: Int,
-    prefix: String = "",
+    side: BatterySide = BatterySide.NONE,
     previousCharging: Boolean = false,
 ) {
     val batteryTextColor = MiuixTheme.colorScheme.onSurface
@@ -169,27 +178,62 @@ fun BatteryIndicator(
                 }
             }
 
-            MiuixText(
-                text = "\uDBC0\uDEE6", style = TextStyle(
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.Default,
-                    color = batteryFillColor,
-                    textAlign = TextAlign.Center
-                ), modifier = Modifier.scale(scaleAnim.value)
+            Icon(
+                painter = painterResource(R.drawable.ic_charging_bolt),
+                contentDescription = null,
+                tint = batteryFillColor,
+                modifier = Modifier
+                    .scale(scaleAnim.value)
+                    .size(14.dp)
             )
         }
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        MiuixText(
-            text = "$prefix $batteryPercentage%",
-            color = batteryTextColor,
-            style = TextStyle(
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Default,
-                textAlign = TextAlign.Center
-            ),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            when (side) {
+                BatterySide.LEFT, BatterySide.RIGHT -> Box(
+                    modifier = Modifier
+                        .padding(end = 4.dp)
+                        .size(14.dp)
+                        .background(batteryTextColor.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    MiuixText(
+                        text = if (side == BatterySide.LEFT) "L" else "R",
+                        color = batteryTextColor,
+                        style = TextStyle(
+                            fontSize = 9.sp,
+                            textAlign = TextAlign.Center
+                        ),
+                    )
+                }
+
+                BatterySide.CASE -> Icon(
+                    painter = painterResource(R.drawable.ic_battery_case),
+                    contentDescription = null,
+                    tint = batteryTextColor,
+                    modifier = Modifier
+                        .padding(end = 4.dp)
+                        .size(14.dp)
+                )
+
+                BatterySide.NONE -> Unit
+            }
+
+            MiuixText(
+                text = "$batteryPercentage%",
+                color = batteryTextColor,
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    fontFamily = OnestFontFamily,
+                    textAlign = TextAlign.Center
+                ),
+            )
+        }
     }
 }
 
@@ -200,7 +244,7 @@ fun BatteryIndicatorPreview() {
         BatteryIndicator(
             batteryPercentage = 50,
             status = BatteryStatus.OPTIMIZED_CHARGING,
-            prefix = "\uDBC6\uDCE5",
+            side = BatterySide.LEFT,
             previousCharging = false
         )
     }

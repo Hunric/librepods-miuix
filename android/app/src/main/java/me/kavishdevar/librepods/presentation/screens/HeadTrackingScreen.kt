@@ -70,7 +70,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -86,6 +85,7 @@ import me.kavishdevar.librepods.presentation.components.StyledButton
 import me.kavishdevar.librepods.presentation.components.StyledToggle
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
 import me.kavishdevar.librepods.presentation.viewmodel.AirPodsViewModel
 import me.kavishdevar.librepods.services.ServiceManager
 import me.kavishdevar.librepods.utils.HeadTracking
@@ -173,7 +173,7 @@ fun HeadTrackingScreen(viewModel: AirPodsViewModel, navigateToPurchase: () -> Un
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = textColor.copy(alpha = 0.6f),
-                    fontFamily = FontFamily.Default
+                    fontFamily = OnestFontFamily
                 ),
                 modifier = Modifier.padding(start = 16.dp, bottom = 8.dp, top = 8.dp)
             )
@@ -211,7 +211,7 @@ fun HeadTrackingScreen(viewModel: AirPodsViewModel, navigateToPurchase: () -> Un
                 style = TextStyle(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Default,
+                    fontFamily = OnestFontFamily,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
             )
@@ -243,7 +243,7 @@ fun HeadTrackingScreen(viewModel: AirPodsViewModel, navigateToPurchase: () -> Un
                         style = TextStyle(
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = FontFamily.Default,
+                            fontFamily = OnestFontFamily,
                             textAlign = TextAlign.Center
                         ),
                         color = MaterialTheme.colorScheme.onBackground
@@ -254,7 +254,7 @@ fun HeadTrackingScreen(viewModel: AirPodsViewModel, navigateToPurchase: () -> Un
                         style = TextStyle(
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = FontFamily.Default,
+                            fontFamily = OnestFontFamily,
                             color = textColor,
                             textAlign = TextAlign.Center
                         ),

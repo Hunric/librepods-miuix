@@ -507,7 +507,7 @@ fun AppSettingsScreen(
                verticalAlignment = Alignment.CenterVertically
            ) {
                StyledIconButton(
-                   icon = "\uDBC0\uDD84",
+                   icon = "\u00D7",
                    backdrop = innerBackdrop,
                    onClick = { contactBottomSheet.value = false }
                )
@@ -518,7 +518,7 @@ fun AppSettingsScreen(
                    color = MaterialTheme.colorScheme.onSurface
                )
                StyledIconButton(
-                   icon = "\uDBC0\uDE1F",
+                   icon = "\u2192",
                    backdrop = innerBackdrop,
                    surfaceColor = if (subjectState.text.isNotEmpty() && descriptionState.text.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                    iconTint = if (subjectState.text.isNotEmpty() && descriptionState.text.isNotEmpty()) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,

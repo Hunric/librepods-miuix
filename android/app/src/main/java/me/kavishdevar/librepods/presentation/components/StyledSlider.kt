@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
@@ -71,8 +72,8 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers.GREEN_DOMINATED_EXAMPLE
@@ -98,6 +99,8 @@ import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.presentation.theme.DesignSystem
 import me.kavishdevar.librepods.presentation.theme.LibrePodsTheme
 import me.kavishdevar.librepods.presentation.theme.LocalDesignSystem
+import me.kavishdevar.librepods.presentation.theme.OnestFontFamily
+import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.preference.SliderPreference
 import me.kavishdevar.librepods.utils.inspectDragGestures
@@ -229,6 +232,8 @@ fun StyledSlider(
     snapThreshold: Float = 0.05f,
     startIcon: String? = null,
     endIcon: String? = null,
+    startIconRes: Int? = null,
+    endIconRes: Int? = null,
     startLabel: String? = null,
     endLabel: String? = null,
     independent: Boolean = false,
@@ -265,11 +270,39 @@ fun StyledSlider(
                 title = label,
                 summary = description,
                 valueText = displayedValue.takeIf { showValue },
-                startAction = startIcon?.let {
-                    { MiuixText(text = it, fontFamily = FontFamily.Default) }
+                startAction = when {
+                    startIconRes != null -> {
+                        {
+                            MiuixIcon(
+                                painter = painterResource(startIconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    startIcon != null -> {
+                        { MiuixText(text = startIcon, fontFamily = OnestFontFamily) }
+                    }
+
+                    else -> null
                 },
-                endActions = endIcon?.let {
-                    { MiuixText(text = it, fontFamily = FontFamily.Default) }
+                endActions = when {
+                    endIconRes != null -> {
+                        {
+                            MiuixIcon(
+                                painter = painterResource(endIconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    endIcon != null -> {
+                        { MiuixText(text = endIcon, fontFamily = OnestFontFamily) }
+                    }
+
+                    else -> null
                 },
                 bottomAction = if (startLabel != null || endLabel != null) {
                     {
@@ -305,6 +338,11 @@ fun StyledSlider(
                 }
             val labelTextColor = if (isDarkTheme) Color.White else Color.Black
 
+            // Either an icon glyph (legacy) or a vector resource counts as "has icon" for
+            // all of the track/slider layout math below.
+            val hasStartIcon = startIcon != null || startIconRes != null
+            val hasEndIcon = endIcon != null || endIconRes != null
+
             val fraction by derivedStateOf {
                 ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start))
                     .fastCoerceIn(0f, 1f)
@@ -324,7 +362,7 @@ fun StyledSlider(
             val content = @Composable {
                 Box(
                     Modifier
-                        .fillMaxWidth(if (startIcon == null && endIcon == null) 0.95f else 1f)
+                        .fillMaxWidth(if (!hasStartIcon && !hasEndIcon) 0.95f else 1f)
                 ) {
                     Box(
                         Modifier
@@ -351,7 +389,7 @@ fun StyledSlider(
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Normal,
                                             color = labelTextColor,
-                                            fontFamily = FontFamily.Default
+                                            fontFamily = OnestFontFamily
                                         )
                                     )
                                     Text(
@@ -360,7 +398,7 @@ fun StyledSlider(
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Normal,
                                             color = labelTextColor,
-                                            fontFamily = FontFamily.Default
+                                            fontFamily = OnestFontFamily
                                         )
                                     )
                                 }
@@ -371,7 +409,7 @@ fun StyledSlider(
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .then(
-                                        if (startIcon == null && endIcon == null) Modifier.padding(
+                                        if (!hasStartIcon && !hasEndIcon) Modifier.padding(
                                             horizontal = 8.dp
                                         ) else Modifier
                                     ),
@@ -380,22 +418,37 @@ fun StyledSlider(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(0.dp)
                                 ) {
-                                    if (startIcon != null) {
-                                        Text(
-                                            text = startIcon,
-                                            style = TextStyle(
-                                                fontSize = 18.sp,
-                                                fontWeight = FontWeight.Normal,
-                                                color = accentColor,
-                                                fontFamily = FontFamily.Default
-                                            ),
-                                            modifier = Modifier
-                                                .padding(horizontal = 12.dp)
-                                                .onGloballyPositioned {
-                                                    startIconWidthState.floatValue =
-                                                        it.size.width.toFloat()
-                                                }
-                                        )
+                                    if (hasStartIcon) {
+                                        if (startIconRes != null) {
+                                            Icon(
+                                                painter = painterResource(startIconRes),
+                                                contentDescription = null,
+                                                tint = accentColor,
+                                                modifier = Modifier
+                                                    .padding(horizontal = 12.dp)
+                                                    .size(20.dp)
+                                                    .onGloballyPositioned {
+                                                        startIconWidthState.floatValue =
+                                                            it.size.width.toFloat()
+                                                    }
+                                            )
+                                        } else {
+                                            Text(
+                                                text = startIcon ?: "",
+                                                style = TextStyle(
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Normal,
+                                                    color = accentColor,
+                                                    fontFamily = OnestFontFamily
+                                                ),
+                                                modifier = Modifier
+                                                    .padding(horizontal = 12.dp)
+                                                    .onGloballyPositioned {
+                                                        startIconWidthState.floatValue =
+                                                            it.size.width.toFloat()
+                                                    }
+                                            )
+                                        }
                                     }
                                     Box(
                                         Modifier
@@ -432,22 +485,37 @@ fun StyledSlider(
                                                 }
                                         )
                                     }
-                                    if (endIcon != null) {
-                                        Text(
-                                            text = endIcon,
-                                            style = TextStyle(
-                                                fontSize = 18.sp,
-                                                fontWeight = FontWeight.Normal,
-                                                color = accentColor,
-                                                fontFamily = FontFamily.Default
-                                            ),
-                                            modifier = Modifier
-                                                .padding(horizontal = 12.dp)
-                                                .onGloballyPositioned {
-                                                    endIconWidthState.floatValue =
-                                                        it.size.width.toFloat()
-                                                }
-                                        )
+                                    if (hasEndIcon) {
+                                        if (endIconRes != null) {
+                                            Icon(
+                                                painter = painterResource(endIconRes),
+                                                contentDescription = null,
+                                                tint = accentColor,
+                                                modifier = Modifier
+                                                    .padding(horizontal = 12.dp)
+                                                    .size(20.dp)
+                                                    .onGloballyPositioned {
+                                                        endIconWidthState.floatValue =
+                                                            it.size.width.toFloat()
+                                                    }
+                                            )
+                                        } else {
+                                            Text(
+                                                text = endIcon ?: "",
+                                                style = TextStyle(
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Normal,
+                                                    color = accentColor,
+                                                    fontFamily = OnestFontFamily
+                                                ),
+                                                modifier = Modifier
+                                                    .padding(horizontal = 12.dp)
+                                                    .onGloballyPositioned {
+                                                        endIconWidthState.floatValue =
+                                                            it.size.width.toFloat()
+                                                    }
+                                            )
+                                        }
                                     }
                                 }
                                 if (snapPoints.isNotEmpty() && startLabel != null && endLabel != null) Spacer(
@@ -460,13 +528,13 @@ fun StyledSlider(
                                 ) {
                                     if (snapPoints.isNotEmpty()) {
                                         val trackWidth =
-                                            if (startIcon != null && endIcon != null) trackWidthState.floatValue - with(
+                                            if (hasStartIcon && hasEndIcon) trackWidthState.floatValue - with(
                                                 density
                                             ) { 6.dp.toPx() } * 2 else trackWidthState.floatValue - with(
                                                 density
                                             ) { 22.dp.toPx() }
                                         val startOffset =
-                                            if (startIcon != null) startIconWidthState.floatValue + with(
+                                            if (hasStartIcon) startIconWidthState.floatValue + with(
                                                 density
                                             ) { 34.dp.toPx() } else with(density) { 14.dp.toPx() }
                                         Box(
@@ -501,7 +569,7 @@ fun StyledSlider(
                         Modifier
                             .graphicsLayer {
                                 val startOffset =
-                                    if (startIcon != null)
+                                    if (hasStartIcon)
                                         startIconWidthState.floatValue + with(density) { 24.dp.toPx() }
                                     else
                                         with(density) { 8.dp.toPx() }
@@ -637,7 +705,7 @@ fun StyledSlider(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = labelTextColor.copy(alpha = 0.6f),
-                                fontFamily = FontFamily.Default
+                                fontFamily = OnestFontFamily
                             ),
                             modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)
                         )
@@ -663,7 +731,7 @@ fun StyledSlider(
                                 color = (if (isSystemInDarkTheme()) Color.White else Color.Black).copy(
                                     alpha = 0.6f
                                 ),
-                                fontFamily = FontFamily.Default
+                                fontFamily = OnestFontFamily
                             ),
                             modifier = Modifier
                                 .padding(horizontal = 18.dp, vertical = 4.dp)
